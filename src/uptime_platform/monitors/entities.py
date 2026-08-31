@@ -20,3 +20,10 @@ class Monitor:
     timeout_seconds: int
     status: MonitorStatus
     created_at: datetime
+    next_check_at: datetime
+
+    failure_threshold: int = 3
+    recovery_threshold: int = 2
+
+    consecutive_failures: int = 0
+    consecutive_successes: int = 0

@@ -1,7 +1,8 @@
 from dataclasses import replace
+from datetime import timedelta
 from uuid import UUID
 
-from uptime_platform.checks.entities import Check
+from uptime_platform.checks.entities import Check, CheckResult
 from uptime_platform.checks.protocols import (
     CheckRepositoryProtocol,
     HttpCheckerProtocol,
@@ -10,7 +11,7 @@ from uptime_platform.monitors.protocols import (
     MonitorRepositoryProtocol,
 )
 from uptime_platform.monitors.state import (
-    status_after_check,
+    apply_check_result,
 )
 
 
@@ -39,24 +40,10 @@ class CheckService:
             timeout_seconds=monitor.timeout_seconds,
         )
 
-        check = await self._check_repository.create(
+        return await self.record(
             monitor_id=monitor.id,
             result=result,
         )
-
-        new_status = status_after_check(
-            current_status=monitor.status,
-            success=result.success,
-        )
-
-        updated_monitor = replace(
-            monitor,
-            status=new_status,
-        )
-
-        await self._monitor_repository.update(updated_monitor)
-
-        return check
 
     async def get_history(self, monitor_id: UUID, limit: int) -> list[Check] | None:
         monitor = await self._monitor_repository.get_by_id(monitor_id)
@@ -68,3 +55,34 @@ class CheckService:
             monitor_id=monitor_id,
             limit=limit,
         )
+
+    async def record(
+        self,
+        monitor_id: UUID,
+        result: CheckResult,
+    ) -> Check | None:
+        monitor = await self._monitor_repository.get_by_id(monitor_id)
+
+        if monitor is None:
+            return None
+
+        check = await self._check_repository.create(
+            monitor_id=monitor.id,
+            result=result,
+        )
+
+        updated_monitor = apply_check_result(
+            monitor=monitor,
+            success=result.success,
+        )
+
+        updated_monitor = replace(
+            updated_monitor,
+            next_check_at=(
+                check.checked_at + timedelta(seconds=monitor.interval_seconds)
+            ),
+        )
+
+        await self._monitor_repository.update(updated_monitor)
+
+        return check

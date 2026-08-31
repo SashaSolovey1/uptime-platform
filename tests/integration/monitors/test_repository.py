@@ -31,6 +31,7 @@ def make_monitor() -> Monitor:
         timeout_seconds=5,
         status=MonitorStatus.PENDING,
         created_at=datetime.now(UTC),
+        next_check_at=datetime.now(UTC),
     )
 
 
@@ -62,6 +63,8 @@ async def test_get_monitor_by_id(
 ) -> None:
     monitor_id = uuid4()
 
+    now = datetime.now(UTC)
+
     model = MonitorModel(
         id=monitor_id,
         name="Production API",
@@ -69,7 +72,8 @@ async def test_get_monitor_by_id(
         interval_seconds=30,
         timeout_seconds=5,
         status=MonitorStatus.PENDING,
-        created_at=datetime.now(UTC),
+        created_at=now,
+        next_check_at=now,
     )
 
     db_session.add(model)

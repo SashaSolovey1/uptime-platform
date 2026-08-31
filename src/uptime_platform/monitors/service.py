@@ -18,10 +18,13 @@ class MonitorService:
         self,
         data: MonitorCreate,
     ) -> Monitor:
+        now = datetime.now(UTC)
+
         monitor = Monitor(
             id=uuid4(),
             status=MonitorStatus.PENDING,
-            created_at=datetime.now(UTC),
+            created_at=now,
+            next_check_at=now,
             **data.model_dump(mode="json"),
         )
 

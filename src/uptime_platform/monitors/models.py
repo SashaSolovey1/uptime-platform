@@ -51,3 +51,29 @@ class MonitorModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
+
+    next_check_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    failure_threshold: Mapped[int] = mapped_column(
+        nullable=False,
+        default=3,
+    )
+
+    recovery_threshold: Mapped[int] = mapped_column(
+        nullable=False,
+        default=2,
+    )
+
+    consecutive_failures: Mapped[int] = mapped_column(
+        nullable=False,
+        default=0,
+    )
+
+    consecutive_successes: Mapped[int] = mapped_column(
+        nullable=False,
+        default=0,
+    )

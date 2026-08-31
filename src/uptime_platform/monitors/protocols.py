@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -26,3 +27,9 @@ class MonitorRepositoryProtocol(Protocol):
         self,
         monitor_id: UUID,
     ) -> bool: ...
+
+    async def get_due(
+        self,
+        now: datetime,
+        limit: int,
+    ) -> list[Monitor]: ...

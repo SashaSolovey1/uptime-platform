@@ -10,6 +10,9 @@
 	test-api \
 	test-integration \
 	test-fresh
+	lint
+	format
+	scheduler
 
 
 dev-up:
@@ -64,3 +67,6 @@ format:
 lint:
 	uv run ruff format --check .
 	uv run ruff check .
+
+scheduler:
+	uv run python -m uptime_platform.scheduler.main

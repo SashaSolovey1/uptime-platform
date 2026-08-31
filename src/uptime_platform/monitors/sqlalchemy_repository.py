@@ -1,9 +1,10 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uptime_platform.monitors.entities import Monitor
+from uptime_platform.monitors.entities import Monitor, MonitorStatus
 from uptime_platform.monitors.models import MonitorModel
 
 
@@ -26,6 +27,11 @@ class SqlAlchemyMonitorRepository:
             timeout_seconds=monitor.timeout_seconds,
             status=monitor.status,
             created_at=monitor.created_at,
+            next_check_at=monitor.next_check_at,
+            failure_threshold=monitor.failure_threshold,
+            recovery_threshold=monitor.recovery_threshold,
+            consecutive_failures=monitor.consecutive_failures,
+            consecutive_successes=monitor.consecutive_successes,
         )
 
         self._session.add(model)
@@ -73,6 +79,11 @@ class SqlAlchemyMonitorRepository:
         model.interval_seconds = monitor.interval_seconds
         model.timeout_seconds = monitor.timeout_seconds
         model.status = monitor.status
+        model.next_check_at = monitor.next_check_at
+        model.failure_threshold = monitor.failure_threshold
+        model.recovery_threshold = monitor.recovery_threshold
+        model.consecutive_failures = monitor.consecutive_failures
+        model.consecutive_successes = monitor.consecutive_successes
 
         await self._session.flush()
         await self._session.refresh(model)
@@ -96,6 +107,27 @@ class SqlAlchemyMonitorRepository:
 
         return True
 
+    async def get_due(
+        self,
+        now: datetime,
+        limit: int,
+    ) -> list[Monitor]:
+        statement = (
+            select(MonitorModel)
+            .where(
+                MonitorModel.next_check_at <= now,
+                MonitorModel.status != MonitorStatus.PAUSED,
+            )
+            .order_by(MonitorModel.next_check_at)
+            .limit(limit)
+        )
+
+        result = await self._session.execute(statement)
+
+        models = result.scalars().all()
+
+        return [self._to_entity(model) for model in models]
+
     @staticmethod
     def _to_entity(model: MonitorModel) -> Monitor:
         return Monitor(
@@ -106,4 +138,9 @@ class SqlAlchemyMonitorRepository:
             timeout_seconds=model.timeout_seconds,
             status=model.status,
             created_at=model.created_at,
+            next_check_at=model.next_check_at,
+            failure_threshold=model.failure_threshold,
+            recovery_threshold=model.recovery_threshold,
+            consecutive_failures=model.consecutive_failures,
+            consecutive_successes=model.consecutive_successes,
         )

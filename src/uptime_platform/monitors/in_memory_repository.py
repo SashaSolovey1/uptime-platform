@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from uptime_platform.monitors.entities import Monitor
+from uptime_platform.monitors.entities import Monitor, MonitorStatus
 
 
 class InMemoryMonitorRepository:
@@ -42,3 +43,21 @@ class InMemoryMonitorRepository:
 
         del self._monitors[monitor_id]
         return True
+
+    async def get_due(
+        self,
+        now: datetime,
+        limit: int,
+    ) -> list[Monitor]:
+        monitors = [
+            monitor
+            for monitor in self._monitors.values()
+            if (
+                monitor.next_check_at <= now
+                and monitor.status is not MonitorStatus.PAUSED
+            )
+        ]
+
+        monitors.sort(key=lambda monitor: monitor.next_check_at)
+
+        return monitors[:limit]

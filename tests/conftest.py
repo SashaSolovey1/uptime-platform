@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from uptime_platform.checks.models import CheckModel
 from uptime_platform.monitors.models import MonitorModel
 
 
@@ -40,12 +41,18 @@ async def db_session() -> AsyncIterator[AsyncSession]:
     )
 
     async with session_factory() as session:
+        await session.execute(delete(CheckModel))
         await session.execute(delete(MonitorModel))
         await session.commit()
 
-        yield session
+        try:
+            yield session
 
-        await session.execute(delete(MonitorModel))
-        await session.commit()
+        finally:
+            await session.rollback()
+
+            await session.execute(delete(CheckModel))
+            await session.execute(delete(MonitorModel))
+            await session.commit()
 
     await engine.dispose()

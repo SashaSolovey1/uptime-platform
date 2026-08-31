@@ -25,6 +25,8 @@ async def test_check_and_monitor_update_can_be_rolled_back(
 ) -> None:
     monitor_id = uuid4()
 
+    now = datetime.now(UTC)
+
     model = MonitorModel(
         id=monitor_id,
         name="Production API",
@@ -32,7 +34,8 @@ async def test_check_and_monitor_update_can_be_rolled_back(
         interval_seconds=60,
         timeout_seconds=5,
         status=MonitorStatus.PENDING,
-        created_at=datetime.now(UTC),
+        created_at=now,
+        next_check_at=now,
     )
 
     db_session.add(model)
