@@ -30,7 +30,7 @@ class SqlAlchemyMonitorRepository:
 
         self._session.add(model)
 
-        await self._session.commit()
+        await self._session.flush()
         await self._session.refresh(model)
 
         return self._to_entity(model)
@@ -74,7 +74,7 @@ class SqlAlchemyMonitorRepository:
         model.timeout_seconds = monitor.timeout_seconds
         model.status = monitor.status
 
-        await self._session.commit()
+        await self._session.flush()
         await self._session.refresh(model)
 
         return self._to_entity(model)
@@ -92,7 +92,7 @@ class SqlAlchemyMonitorRepository:
             return False
 
         await self._session.delete(model)
-        await self._session.commit()
+        await self._session.flush()
 
         return True
 

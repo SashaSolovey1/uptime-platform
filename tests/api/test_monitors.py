@@ -5,7 +5,7 @@ from uptime_platform.main import app
 from uptime_platform.monitors.dependencies import (
     get_monitor_repository,
 )
-from uptime_platform.monitors.repository import (
+from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
 )
 

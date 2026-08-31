@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from uptime_platform.monitors.entities import MonitorStatus
-from uptime_platform.monitors.repository import InMemoryMonitorRepository
+from uptime_platform.monitors.in_memory_repository import InMemoryMonitorRepository
 from uptime_platform.monitors.schemas import (
     MonitorCreate,
     MonitorUpdate,

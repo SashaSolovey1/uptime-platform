@@ -55,3 +55,12 @@ test: test-migrate
 test-fresh:
 	docker compose --profile test rm -sf postgres-test
 	$(MAKE) test
+
+format:
+	uv run ruff format .
+	uv run ruff check --fix .
+
+
+lint:
+	uv run ruff format --check .
+	uv run ruff check .
