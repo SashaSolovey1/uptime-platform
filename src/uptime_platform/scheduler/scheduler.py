@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import (
@@ -21,9 +22,9 @@ from uptime_platform.monitors.sqlalchemy_repository import (
 from uptime_platform.outbox.sqlalchemy_repository import (
     SqlAlchemyOutboxRepository,
 )
-import logging
 
 logger = logging.getLogger(__name__)
+
 
 class Scheduler:
     def __init__(
@@ -51,9 +52,7 @@ class Scheduler:
                     processed,
                 )
 
-            await asyncio.sleep(
-                self._poll_interval_seconds
-            )
+            await asyncio.sleep(self._poll_interval_seconds)
 
     async def run_once(self) -> int:
         monitors = await self._get_due_monitors()

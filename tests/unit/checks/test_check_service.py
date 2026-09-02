@@ -440,7 +440,12 @@ async def test_monitor_down_transition_creates_incident() -> None:
     assert incident.status is IncidentStatus.OPEN
     assert incident.resolved_at is None
 
-    events = await outbox_repository.get_pending(limit=10)
+    events = await outbox_repository.claim_pending(
+        limit=10,
+        max_attempts=3,
+        now=datetime.now(UTC),
+        locked_until=datetime.now(UTC),
+    )
 
     assert len(events) == 1
 
@@ -510,7 +515,12 @@ async def test_monitor_recovery_resolves_incident() -> None:
     assert resolved_incident.status is IncidentStatus.RESOLVED
     assert resolved_incident.resolved_at is not None
 
-    events = await outbox_repository.get_pending(limit=10)
+    events = await outbox_repository.claim_pending(
+        limit=10,
+        max_attempts=3,
+        now=datetime.now(UTC),
+        locked_until=datetime.now(UTC),
+    )
 
     assert len(events) == 1
 

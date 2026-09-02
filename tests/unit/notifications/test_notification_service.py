@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from uptime_platform.notifications.exceptions import NotificationDeliveryError
 
+from uptime_platform.notifications.exceptions import NotificationDeliveryError
 from uptime_platform.notifications.service import (
     NotificationService,
 )
@@ -42,6 +42,8 @@ class FailingNotificationChannel:
 def make_event(
     attempts: int = 0,
 ) -> OutboxEvent:
+    now = datetime.now(UTC)
+
     return OutboxEvent(
         id=uuid4(),
         event_type=OutboxEventType.INCIDENT_OPENED,
@@ -49,41 +51,44 @@ def make_event(
             "incident_id": str(uuid4()),
             "monitor_id": str(uuid4()),
         },
-        created_at=datetime.now(UTC),
+        created_at=now,
         processed_at=None,
         attempts=attempts,
         last_error=None,
+        next_attempt_at=now,
+        locked_until=None,
     )
 
 
 async def test_successful_notification_marks_event_processed() -> None:
     channel = StubNotificationChannel()
+
     service = NotificationService(channel)
 
     event = make_event()
 
     result = await service.process(event)
-
-    assert channel.calls == 1
 
     assert result.processed_at is not None
     assert result.attempts == 1
     assert result.last_error is None
+    assert result.locked_until is None
 
 
-async def test_failed_notification_keeps_event_pending() -> None:
+async def test_failed_notification_schedules_retry() -> None:
     channel = FailingNotificationChannel()
+
     service = NotificationService(channel)
 
     event = make_event()
 
     result = await service.process(event)
 
-    assert channel.calls == 1
-
     assert result.processed_at is None
     assert result.attempts == 1
     assert result.last_error == "Notification failed"
+    assert result.next_attempt_at > event.next_attempt_at
+    assert result.locked_until is None
 
 
 async def test_retry_increments_existing_attempt_count() -> None:

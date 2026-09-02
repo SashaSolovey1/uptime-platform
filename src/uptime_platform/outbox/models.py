@@ -64,10 +64,26 @@ class OutboxEventModel(Base):
         nullable=True,
     )
 
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     __table_args__ = (
         Index(
             "ix_outbox_events_processed_at_created_at",
             "processed_at",
             "created_at",
+        ),
+        Index(
+            "ix_outbox_events_delivery",
+            "processed_at",
+            "next_attempt_at",
+            "locked_until",
         ),
     )

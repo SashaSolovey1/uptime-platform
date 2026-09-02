@@ -10,20 +10,14 @@ from uptime_platform.scheduler.scheduler import (
 
 logger = logging.getLogger(__name__)
 
+
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
-        format=(
-            "%(asctime)s "
-            "%(levelname)s "
-            "%(name)s "
-            "%(message)s"
-        ),
+        format=("%(asctime)s %(levelname)s %(name)s %(message)s"),
     )
 
-    logger.info(
-        "scheduler started"
-    )
+    logger.info("scheduler started")
 
     scheduler = Scheduler(
         session_factory=SessionFactory,

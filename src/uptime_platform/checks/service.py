@@ -144,6 +144,8 @@ class CheckService:
                 processed_at=None,
                 attempts=0,
                 last_error=None,
+                next_attempt_at=checked_at,
+                locked_until=None,
             )
 
             await self._outbox_repository.create(event)
@@ -175,6 +177,8 @@ class CheckService:
                 processed_at=None,
                 attempts=0,
                 last_error=None,
+                next_attempt_at=checked_at,
+                locked_until=None,
             )
 
             await self._outbox_repository.create(event)

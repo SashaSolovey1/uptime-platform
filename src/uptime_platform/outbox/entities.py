@@ -18,3 +18,5 @@ class OutboxEvent:
     processed_at: datetime | None
     attempts: int
     last_error: str | None
+    next_attempt_at: datetime
+    locked_until: datetime | None

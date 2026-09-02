@@ -1,9 +1,8 @@
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
-from uptime_platform.outbox.entities import (
-    OutboxEvent,
-)
+from uptime_platform.outbox.entities import OutboxEvent
 
 
 class OutboxRepositoryProtocol(Protocol):
@@ -12,18 +11,20 @@ class OutboxRepositoryProtocol(Protocol):
         event: OutboxEvent,
     ) -> OutboxEvent: ...
 
-    async def get_pending(
+    async def get_by_id(
+        self,
+        event_id: UUID,
+    ) -> OutboxEvent | None: ...
+
+    async def claim_pending(
         self,
         limit: int,
-        max_attempts: int = 5,
+        max_attempts: int,
+        now: datetime,
+        locked_until: datetime,
     ) -> list[OutboxEvent]: ...
 
     async def update(
         self,
         event: OutboxEvent,
-    ) -> OutboxEvent | None: ...
-
-    async def get_by_id(
-        self,
-        event_id: UUID,
     ) -> OutboxEvent | None: ...
