@@ -1,0 +1,2 @@
+class NotificationDeliveryError(Exception):
+    pass

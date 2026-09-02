@@ -11,11 +11,19 @@ from uptime_platform.checks.service import CheckService
 from uptime_platform.checks.sqlalchemy_repository import (
     SqlAlchemyCheckRepository,
 )
+from uptime_platform.incidents.sqlalchemy_repository import (
+    SqlAlchemyIncidentRepository,
+)
 from uptime_platform.monitors.entities import Monitor
 from uptime_platform.monitors.sqlalchemy_repository import (
     SqlAlchemyMonitorRepository,
 )
+from uptime_platform.outbox.sqlalchemy_repository import (
+    SqlAlchemyOutboxRepository,
+)
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Scheduler:
     def __init__(
@@ -35,9 +43,17 @@ class Scheduler:
 
     async def run_forever(self) -> None:
         while True:
-            await self.run_once()
+            processed = await self.run_once()
 
-            await asyncio.sleep(self._poll_interval_seconds)
+            if processed > 0:
+                logger.info(
+                    "scheduler processed %d monitor(s)",
+                    processed,
+                )
+
+            await asyncio.sleep(
+                self._poll_interval_seconds
+            )
 
     async def run_once(self) -> int:
         monitors = await self._get_due_monitors()
@@ -76,9 +92,15 @@ class Scheduler:
 
                     check_repository = SqlAlchemyCheckRepository(session)
 
+                    incident_repository = SqlAlchemyIncidentRepository(session)
+
+                    outbox_repository = SqlAlchemyOutboxRepository(session)
+
                     service = CheckService(
                         monitor_repository=monitor_repository,
                         check_repository=check_repository,
+                        incident_repository=incident_repository,
+                        outbox_repository=outbox_repository,
                         checker=self._checker,
                     )
 

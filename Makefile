@@ -13,6 +13,7 @@
 	lint
 	format
 	scheduler
+	notification-worker
 
 
 dev-up:
@@ -70,3 +71,6 @@ lint:
 
 scheduler:
 	uv run python -m uptime_platform.scheduler.main
+
+notification-worker:
+	uv run python -m uptime_platform.notifications.main

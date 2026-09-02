@@ -1,17 +1,31 @@
 from dataclasses import replace
-from datetime import timedelta
-from uuid import UUID
+from datetime import datetime, timedelta
+from uuid import UUID, uuid4
 
-from uptime_platform.checks.entities import Check, CheckResult
+from uptime_platform.checks.entities import (
+    Check,
+    CheckResult,
+)
 from uptime_platform.checks.protocols import (
     CheckRepositoryProtocol,
     HttpCheckerProtocol,
 )
-from uptime_platform.monitors.protocols import (
-    MonitorRepositoryProtocol,
+from uptime_platform.incidents.entities import (
+    Incident,
+    IncidentStatus,
 )
-from uptime_platform.monitors.state import (
-    apply_check_result,
+from uptime_platform.incidents.protocols import (
+    IncidentRepositoryProtocol,
+)
+from uptime_platform.monitors.entities import MonitorStatus
+from uptime_platform.monitors.protocols import MonitorRepositoryProtocol
+from uptime_platform.monitors.state import apply_check_result
+from uptime_platform.outbox.entities import (
+    OutboxEvent,
+    OutboxEventType,
+)
+from uptime_platform.outbox.protocols import (
+    OutboxRepositoryProtocol,
 )
 
 
@@ -20,10 +34,14 @@ class CheckService:
         self,
         monitor_repository: MonitorRepositoryProtocol,
         check_repository: CheckRepositoryProtocol,
+        incident_repository: IncidentRepositoryProtocol,
+        outbox_repository: OutboxRepositoryProtocol,
         checker: HttpCheckerProtocol,
     ) -> None:
         self._monitor_repository = monitor_repository
         self._check_repository = check_repository
+        self._incident_repository = incident_repository
+        self._outbox_repository = outbox_repository
         self._checker = checker
 
     async def run(
@@ -85,4 +103,80 @@ class CheckService:
 
         await self._monitor_repository.update(updated_monitor)
 
+        await self._handle_incident_transition(
+            previous_status=monitor.status,
+            current_status=updated_monitor.status,
+            monitor_id=monitor.id,
+            checked_at=check.checked_at,
+        )
+
         return check
+
+    async def _handle_incident_transition(
+        self,
+        previous_status: MonitorStatus,
+        current_status: MonitorStatus,
+        monitor_id: UUID,
+        checked_at: datetime,
+    ) -> None:
+        if (
+            previous_status is not MonitorStatus.DOWN
+            and current_status is MonitorStatus.DOWN
+        ):
+            incident = Incident(
+                id=uuid4(),
+                monitor_id=monitor_id,
+                status=IncidentStatus.OPEN,
+                started_at=checked_at,
+                resolved_at=None,
+            )
+
+            await self._incident_repository.create(incident)
+
+            event = OutboxEvent(
+                id=uuid4(),
+                event_type=OutboxEventType.INCIDENT_OPENED,
+                payload={
+                    "incident_id": str(incident.id),
+                    "monitor_id": str(monitor_id),
+                },
+                created_at=checked_at,
+                processed_at=None,
+                attempts=0,
+                last_error=None,
+            )
+
+            await self._outbox_repository.create(event)
+
+            return
+
+        if previous_status is MonitorStatus.DOWN and current_status is MonitorStatus.UP:
+            incident = await self._incident_repository.get_open_by_monitor_id(
+                monitor_id
+            )
+
+            if incident is None:
+                return
+
+            resolved_incident = replace(
+                incident,
+                status=IncidentStatus.RESOLVED,
+                resolved_at=checked_at,
+            )
+
+            event = OutboxEvent(
+                id=uuid4(),
+                event_type=OutboxEventType.INCIDENT_RESOLVED,
+                payload={
+                    "incident_id": str(resolved_incident.id),
+                    "monitor_id": str(monitor_id),
+                },
+                created_at=checked_at,
+                processed_at=None,
+                attempts=0,
+                last_error=None,
+            )
+
+            await self._outbox_repository.create(event)
+
+            await self._incident_repository.update(resolved_incident)

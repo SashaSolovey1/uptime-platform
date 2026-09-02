@@ -4,46 +4,26 @@ A self-hosted uptime monitoring and incident management platform built with Fast
 
 > **Status:** Early beta. The project is under active development.
 
-## Overview
-
-Uptime Platform is a backend service for monitoring websites and services, storing check history, tracking availability, and eventually managing incidents, notifications, maintenance windows, and public status pages.
-
-The project is being built as a modular monolith with clear separation between the API, application services, domain entities, persistence layer, and monitoring infrastructure.
-
 ## Current Features
 
 - Monitor CRUD API
-- Asynchronous HTTP availability checks
-- HTTP status code tracking
-- Response time measurement
-- Network error and timeout handling
-- Check history stored in PostgreSQL
-- Async SQLAlchemy repositories
-- Alembic database migrations
-- Dependency injection with FastAPI
-- Separate development and test PostgreSQL environments
-- Unit tests
-- API tests
-- PostgreSQL integration tests
-- Docker Compose development environment
-- Makefile for common development commands
-
-## Planned Features
-
+- Asynchronous HTTP checks
 - Automatic monitor scheduling
-- Monitor state transitions
+- Check history stored in PostgreSQL
+- HTTP status code and response time tracking
+- Network error and timeout handling
+- Monitor states: `pending`, `up`, `down`, `paused`
 - Failure and recovery thresholds
-- Incident creation and resolution
-- Maintenance windows
-- Notification channels
-- Public status pages
-- TCP monitoring
-- DNS monitoring
-- TLS certificate monitoring
-- RBAC
-- API keys
-- Audit log
-- Prometheus metrics
+- Automatic monitor state transitions
+- Automatic incident creation and resolution
+- Incidents API with status and monitor filtering
+- Transactional outbox for incident events
+- Separate notification worker
+- Notification retry tracking
+- Console notification channel
+- Async SQLAlchemy repositories
+- Alembic migrations
+- Unit, API, and PostgreSQL integration tests
 
 ## Tech Stack
 
@@ -55,46 +35,11 @@ The project is being built as a modular monolith with clear separation between t
 - PostgreSQL
 - Alembic
 - Pydantic
+- asyncio
 - Docker Compose
 - pytest
+- Ruff
 - uv
-
-## Project Structure
-
-```text
-src/uptime_platform/
-├── checks/
-│   ├── entities.py
-│   ├── models.py
-│   ├── protocols.py
-│   ├── service.py
-│   ├── sqlalchemy_repository.py
-│   ├── dependencies.py
-│   └── router.py
-├── monitors/
-│   ├── entities.py
-│   ├── models.py
-│   ├── schemas.py
-│   ├── protocols.py
-│   ├── service.py
-│   ├── sqlalchemy_repository.py
-│   ├── dependencies.py
-│   └── router.py
-├── db/
-│   ├── base.py
-│   └── session.py
-└── main.py
-```
-
-## Requirements
-
-You need the following installed:
-
-- Python 3.13
-- uv
-- Docker
-- Docker Compose
-- make
 
 ## Getting Started
 
@@ -105,25 +50,25 @@ git clone https://github.com/SashaSolovey1/uptime-platform.git
 cd uptime-platform
 ```
 
-Install Python dependencies:
+Install dependencies:
 
 ```bash
 uv sync
 ```
 
-Create the local environment file:
+Create the environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Start the development PostgreSQL database:
+Start PostgreSQL:
 
 ```bash
 make dev-up
 ```
 
-Apply database migrations:
+Apply migrations:
 
 ```bash
 make migrate
@@ -135,33 +80,67 @@ Start the API:
 uv run fastapi dev src/uptime_platform/main.py
 ```
 
-The API will be available at:
-
-```text
-http://127.0.0.1:8000
-```
-
-Interactive API documentation:
+API documentation:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-## Testing
+## Running Background Processes
 
-Run the complete test suite:
+Start the monitor scheduler:
+
+```bash
+make scheduler
+```
+
+Start the notification worker:
+
+```bash
+make notification-worker
+```
+
+For local development, the API, scheduler, and notification worker should run as separate processes.
+
+## Development Commands
+
+Start PostgreSQL:
+
+```bash
+make dev-up
+```
+
+Stop PostgreSQL:
+
+```bash
+make dev-down
+```
+
+Apply migrations:
+
+```bash
+make migrate
+```
+
+Run all tests:
 
 ```bash
 make test
 ```
 
-Run only unit tests:
+Run tests against a fresh test database:
+
+```bash
+make test-fresh
+```
+
+Run unit tests:
 
 ```bash
 make test-unit
 ```
 
-Run only API tests:
+Run API tests:
 
 ```bash
 make test-api
@@ -173,77 +152,65 @@ Run PostgreSQL integration tests:
 make test-integration
 ```
 
-Run the complete test suite against a fresh test database:
+Format code:
 
 ```bash
-make test-fresh
+make format
 ```
 
-The integration tests use a separate temporary PostgreSQL instance and apply the same Alembic migrations used by the development and production environments.
+Run lint checks:
+
+```bash
+make lint
+```
+
+Run the scheduler:
+
+```bash
+make scheduler
+```
+
+Run the notification worker:
+
+```bash
+make notification-worker
+```
 
 ## Database Migrations
 
-Create a new migration:
+Create a migration:
 
 ```bash
 uv run alembic revision --autogenerate -m "migration description"
 ```
 
-Apply all migrations:
+Apply migrations:
 
 ```bash
 make migrate
 ```
 
-## API Example
+## Planned Features
 
-Create a monitor:
-
-```bash
-curl -X POST \
-  http://127.0.0.1:8000/api/v1/monitors \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Example",
-    "url": "https://example.com",
-    "interval_seconds": 60,
-    "timeout_seconds": 5
-  }'
-```
-
-Run a check manually:
-
-```bash
-curl -X POST \
-  http://127.0.0.1:8000/api/v1/monitors/<MONITOR_ID>/checks
-```
-
-Get check history:
-
-```bash
-curl \
-  "http://127.0.0.1:8000/api/v1/monitors/<MONITOR_ID>/checks?limit=50"
-```
-
-## Development Status
-
-The current version provides the basic foundation for the monitoring platform:
-
-```text
-Monitor
-   ↓
-HTTP Checker
-   ↓
-Check Result
-   ↓
-Check Service
-   ↓
-PostgreSQL
-   ↓
-Check History
-```
-
-Automatic scheduling, state transitions, incidents, and notifications are still under development.
+- Safe outbox processing with multiple workers
+- Notification retry backoff
+- Webhook notifications
+- Telegram notifications
+- Email notifications
+- Maintenance windows
+- Public status pages
+- TCP monitoring
+- DNS monitoring
+- TLS certificate monitoring
+- Organizations
+- RBAC
+- API keys
+- Audit log
+- Prometheus metrics
+- Grafana dashboards
+- Redis-backed queues and distributed coordination
+- Docker production setup
+- CI/CD
 
 ## Version
 

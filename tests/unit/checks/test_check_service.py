@@ -6,12 +6,20 @@ import pytest
 from uptime_platform.checks.entities import CheckResult
 from uptime_platform.checks.in_memory_repository import InMemoryCheckRepository
 from uptime_platform.checks.service import CheckService
+from uptime_platform.incidents.entities import Incident, IncidentStatus
+from uptime_platform.incidents.in_memory_repository import (
+    InMemoryIncidentRepository,
+)
 from uptime_platform.monitors.entities import (
     Monitor,
     MonitorStatus,
 )
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
+)
+from uptime_platform.outbox.entities import OutboxEventType
+from uptime_platform.outbox.in_memory_repository import (
+    InMemoryOutboxRepository,
 )
 
 pytestmark = pytest.mark.anyio
@@ -61,6 +69,8 @@ def make_monitor(
 async def test_successful_check_changes_monitor_to_up() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -78,6 +88,8 @@ async def test_successful_check_changes_monitor_to_up() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -101,6 +113,8 @@ async def test_successful_check_changes_monitor_to_up() -> None:
 async def test_first_success_does_not_recover_down_monitor() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -118,39 +132,8 @@ async def test_first_success_does_not_recover_down_monitor() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
-        checker=checker,
-    )
-
-    await service.run(monitor.id)
-
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
-
-    assert updated_monitor is not None
-    assert updated_monitor.status is MonitorStatus.DOWN
-    assert updated_monitor.consecutive_successes == 1
-    assert updated_monitor.consecutive_failures == 0
-
-
-async def test_first_success_does_not_recover_down_monitor() -> None:
-    monitor_repository = InMemoryMonitorRepository()
-    check_repository = InMemoryCheckRepository()
-
-    checker = StubHttpChecker(
-        CheckResult(
-            success=True,
-            response_time_ms=50.0,
-            status_code=200,
-            error=None,
-        )
-    )
-
-    monitor = make_monitor(status=MonitorStatus.DOWN)
-
-    await monitor_repository.create(monitor)
-
-    service = CheckService(
-        monitor_repository=monitor_repository,
-        check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -167,6 +150,8 @@ async def test_first_success_does_not_recover_down_monitor() -> None:
 async def test_second_success_recovers_down_monitor() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -187,6 +172,8 @@ async def test_second_success_recovers_down_monitor() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -203,6 +190,8 @@ async def test_second_success_recovers_down_monitor() -> None:
 async def test_failed_check_keeps_down_monitor_down() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -220,6 +209,8 @@ async def test_failed_check_keeps_down_monitor_down() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -234,6 +225,8 @@ async def test_failed_check_keeps_down_monitor_down() -> None:
 async def test_paused_monitor_keeps_paused_status() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -251,6 +244,8 @@ async def test_paused_monitor_keeps_paused_status() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -265,6 +260,8 @@ async def test_paused_monitor_keeps_paused_status() -> None:
 async def test_nonexistent_monitor_is_not_checked() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -278,6 +275,8 @@ async def test_nonexistent_monitor_is_not_checked() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -290,6 +289,8 @@ async def test_nonexistent_monitor_is_not_checked() -> None:
 async def test_check_is_saved_to_history() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -307,6 +308,8 @@ async def test_check_is_saved_to_history() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -330,6 +333,8 @@ async def test_check_is_saved_to_history() -> None:
 async def test_get_history_returns_none_for_nonexistent_monitor() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -343,6 +348,8 @@ async def test_get_history_returns_none_for_nonexistent_monitor() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -357,6 +364,8 @@ async def test_get_history_returns_none_for_nonexistent_monitor() -> None:
 async def test_third_failure_marks_monitor_down() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -377,6 +386,8 @@ async def test_third_failure_marks_monitor_down() -> None:
     service = CheckService(
         monitor_repository=monitor_repository,
         check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
         checker=checker,
     )
 
@@ -388,3 +399,125 @@ async def test_third_failure_marks_monitor_down() -> None:
     assert updated_monitor.status is MonitorStatus.DOWN
     assert updated_monitor.consecutive_failures == 3
     assert updated_monitor.consecutive_successes == 0
+
+
+async def test_monitor_down_transition_creates_incident() -> None:
+    monitor_repository = InMemoryMonitorRepository()
+    check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
+
+    checker = StubHttpChecker(
+        CheckResult(
+            success=False,
+            response_time_ms=2000.0,
+            status_code=None,
+            error="Connection failed",
+        )
+    )
+
+    monitor = make_monitor(
+        status=MonitorStatus.UP,
+        consecutive_failures=2,
+    )
+
+    await monitor_repository.create(monitor)
+
+    service = CheckService(
+        monitor_repository=monitor_repository,
+        check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
+        checker=checker,
+    )
+
+    await service.run(monitor.id)
+
+    incident = await incident_repository.get_open_by_monitor_id(monitor.id)
+
+    assert incident is not None
+    assert incident.monitor_id == monitor.id
+    assert incident.status is IncidentStatus.OPEN
+    assert incident.resolved_at is None
+
+    events = await outbox_repository.get_pending(limit=10)
+
+    assert len(events) == 1
+
+    event = events[0]
+
+    assert event.event_type is OutboxEventType.INCIDENT_OPENED
+
+    assert event.payload["incident_id"] == str(incident.id)
+
+    assert event.payload["monitor_id"] == str(monitor.id)
+
+    assert event.processed_at is None
+    assert event.attempts == 0
+
+
+async def test_monitor_recovery_resolves_incident() -> None:
+    monitor_repository = InMemoryMonitorRepository()
+    check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
+
+    checker = StubHttpChecker(
+        CheckResult(
+            success=True,
+            response_time_ms=50.0,
+            status_code=200,
+            error=None,
+        )
+    )
+
+    monitor = make_monitor(
+        status=MonitorStatus.DOWN,
+        consecutive_successes=1,
+    )
+
+    await monitor_repository.create(monitor)
+
+    incident = Incident(
+        id=uuid4(),
+        monitor_id=monitor.id,
+        status=IncidentStatus.OPEN,
+        started_at=datetime.now(UTC),
+        resolved_at=None,
+    )
+
+    await incident_repository.create(incident)
+
+    service = CheckService(
+        monitor_repository=monitor_repository,
+        check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
+        checker=checker,
+    )
+
+    await service.run(monitor.id)
+
+    incidents = await incident_repository.get_by_monitor_id(
+        monitor.id,
+        limit=10,
+    )
+
+    assert len(incidents) == 1
+
+    resolved_incident = incidents[0]
+
+    assert resolved_incident.status is IncidentStatus.RESOLVED
+    assert resolved_incident.resolved_at is not None
+
+    events = await outbox_repository.get_pending(limit=10)
+
+    assert len(events) == 1
+
+    event = events[0]
+
+    assert event.event_type is OutboxEventType.INCIDENT_RESOLVED
+
+    assert event.payload["incident_id"] == str(resolved_incident.id)
+
+    assert event.payload["monitor_id"] == str(monitor.id)
