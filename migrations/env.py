@@ -12,6 +12,7 @@ from uptime_platform.db.base import Base
 from uptime_platform.incidents.models import IncidentModel  # noqa: F401
 from uptime_platform.monitors.models import MonitorModel  # noqa: F401
 from uptime_platform.notifications.models import (
+    NotificationDeliveryModel,  # noqa: F401
     NotificationDestinationModel,  # noqa: F401
 )
 from uptime_platform.outbox.models import OutboxEventModel  # noqa: F401
