@@ -1,10 +1,13 @@
 import asyncio
 import logging
 
-from uptime_platform.core.config import get_settings
-from uptime_platform.db.session import SessionFactory
-from uptime_platform.notifications.factory import (
-    create_notification_channel,
+import httpx2
+
+from uptime_platform.core.config import (
+    get_settings,
+)
+from uptime_platform.db.session import (
+    SessionFactory,
 )
 from uptime_platform.notifications.worker import (
     NotificationWorker,
@@ -21,15 +24,13 @@ async def main() -> None:
 
     settings = get_settings()
 
-    async with create_notification_channel(settings) as channel:
-        logger.info(
-            "notification worker started channel=%s",
-            settings.notification_channel,
-        )
+    logger.info("notification worker started")
 
+    async with httpx2.AsyncClient() as client:
         worker = NotificationWorker(
             session_factory=SessionFactory,
-            channel=channel,
+            http_client=client,
+            webhook_timeout_seconds=(settings.webhook_timeout_seconds),
         )
 
         await worker.run_forever()

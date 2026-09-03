@@ -11,49 +11,50 @@ from uptime_platform.notifications.exceptions import (
 from uptime_platform.notifications.protocols import (
     NotificationChannelProtocol,
 )
-from uptime_platform.notifications.repository_protocols import (
-    NotificationDeliveryRepositoryProtocol,
-    NotificationDestinationRepositoryProtocol,
-)
 from uptime_platform.outbox.entities import OutboxEvent
 from uptime_platform.outbox.protocols import (
     OutboxRepositoryProtocol,
+)
+
+from uptime_platform.notifications.repository_protocols import (
+    NotificationDeliveryRepositoryProtocol,
+    NotificationDestinationRepositoryProtocol,
 )
 
 
 class NotificationService:
     def __init__(
         self,
-        channel: NotificationChannelProtocol,
         retry_base_seconds: int = 5,
         retry_max_seconds: int = 300,
     ) -> None:
-        self._channel = channel
         self._retry_base_seconds = retry_base_seconds
         self._retry_max_seconds = retry_max_seconds
 
     async def process(
         self,
+        delivery: NotificationDelivery,
         event: OutboxEvent,
-    ) -> OutboxEvent:
-        attempts = event.attempts + 1
+        channel: NotificationChannelProtocol,
+    ) -> NotificationDelivery:
+        attempts = delivery.attempts + 1
 
         try:
-            await self._channel.send(event)
+            await channel.send(event)
 
         except NotificationDeliveryError as exc:
-            retry_delay = self._retry_delay(attempts)
+            now = datetime.now(UTC)
 
             return replace(
-                event,
+                delivery,
                 attempts=attempts,
                 last_error=str(exc)[:2000],
-                next_attempt_at=(datetime.now(UTC) + timedelta(seconds=retry_delay)),
+                next_attempt_at=(now + timedelta(seconds=self._retry_delay(attempts))),
                 locked_until=None,
             )
 
         return replace(
-            event,
+            delivery,
             processed_at=datetime.now(UTC),
             attempts=attempts,
             last_error=None,

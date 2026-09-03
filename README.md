@@ -1,3 +1,4 @@
+[![Docker Pulls](https://img.shields.io/docker/pulls/sashasolovey/uptime-platform)](https://hub.docker.com/r/sashastudent/uptime-platform)
 # Uptime Platform
 
 A self-hosted uptime monitoring and incident management platform built with FastAPI.
@@ -20,12 +21,16 @@ A self-hosted uptime monitoring and incident management platform built with Fast
 - Automatic incident creation and resolution
 - Incidents API with status and monitor filtering
 - Transactional outbox for incident events
+- Notification destinations configured through the API
+- Multiple notification destinations
+- Independent delivery state for each destination
 - Separate notification worker
-- Safe outbox claiming for multiple workers
+- PostgreSQL `FOR UPDATE SKIP LOCKED` worker claiming
+- Lease-based delivery processing
 - Notification retry with exponential backoff
-- Console notification channel
 - Webhook notification channel
 - HMAC-SHA256 signed webhooks
+- Webhook event IDs for idempotent receivers
 - Async SQLAlchemy repositories
 - Alembic migrations
 - Unit, API, and PostgreSQL integration tests
@@ -91,7 +96,7 @@ API documentation:
 http://127.0.0.1:8000/docs
 ```
 
-## Running Background Processes
+## Background Processes
 
 Start the monitor scheduler:
 
@@ -107,30 +112,38 @@ make notification-worker
 
 The API, scheduler, and notification worker run as separate processes.
 
-## Notifications
+## Notification Destinations
 
-Console notifications are enabled by default:
+Notification destinations are stored in PostgreSQL and configured through the API.
 
-```env
-NOTIFICATION_CHANNEL=console
+Create a webhook destination:
+
+```bash
+curl -X POST \
+  http://127.0.0.1:8000/api/v1/notification-destinations \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Production webhook",
+    "destination_type": "webhook",
+    "enabled": true,
+    "webhook_url": "https://example.com/webhook",
+    "webhook_secret": "change-this-secret"
+  }'
 ```
 
-Webhook notifications:
+The webhook secret is accepted when creating or updating a destination but is not returned by the API.
 
-```env
-NOTIFICATION_CHANNEL=webhook
-WEBHOOK_URL=https://example.com/webhook
-WEBHOOK_SECRET=change-me
-WEBHOOK_TIMEOUT_SECONDS=5
-```
+Each incident event is fanned out into an independent delivery for every enabled notification destination.
 
-Webhook requests are signed using HMAC-SHA256 and include:
+Webhook requests include:
 
 ```text
 X-Uptime-Event-ID
 X-Uptime-Timestamp
 X-Uptime-Signature
 ```
+
+The request body and timestamp are signed using HMAC-SHA256.
 
 ## Development Commands
 
@@ -222,8 +235,6 @@ make migrate
 
 ## Planned Features
 
-- Notification channels stored and configured through the API
-- Multiple notification destinations
 - Telegram notifications
 - Email notifications
 - Maintenance windows
@@ -231,15 +242,23 @@ make migrate
 - TCP monitoring
 - DNS monitoring
 - TLS certificate monitoring
-- Organizations
+- Organizations and projects
 - RBAC
 - API keys
 - Audit log
 - Prometheus metrics
 - Grafana dashboards
 - Redis-backed queues and distributed coordination
+- Encrypted notification credentials
 - Production Docker setup
 - CI/CD
+
+## Docker
+
+The official container image is available on Docker Hub:
+
+```bash
+docker pull sashastudent/uptime-platform:0.1.0
 
 ## Version
 

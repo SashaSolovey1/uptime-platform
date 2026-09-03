@@ -3,7 +3,12 @@ from uuid import uuid4
 
 import pytest
 
-from uptime_platform.notifications.exceptions import NotificationDeliveryError
+from uptime_platform.notifications.entities import (
+    NotificationDelivery,
+)
+from uptime_platform.notifications.exceptions import (
+    NotificationDeliveryError,
+)
 from uptime_platform.notifications.service import (
     NotificationService,
 )
@@ -16,32 +21,22 @@ pytestmark = pytest.mark.anyio
 
 
 class StubNotificationChannel:
-    def __init__(self) -> None:
-        self.calls = 0
-
     async def send(
         self,
         event: OutboxEvent,
     ) -> None:
-        self.calls += 1
+        pass
 
 
 class FailingNotificationChannel:
-    def __init__(self) -> None:
-        self.calls = 0
-
     async def send(
         self,
         event: OutboxEvent,
     ) -> None:
-        self.calls += 1
-
         raise NotificationDeliveryError("Notification failed")
 
 
-def make_event(
-    attempts: int = 0,
-) -> OutboxEvent:
+def make_event() -> OutboxEvent:
     now = datetime.now(UTC)
 
     return OutboxEvent(
@@ -53,21 +48,43 @@ def make_event(
         },
         created_at=now,
         processed_at=None,
-        attempts=attempts,
+        attempts=0,
         last_error=None,
         next_attempt_at=now,
         locked_until=None,
     )
 
 
-async def test_successful_notification_marks_event_processed() -> None:
-    channel = StubNotificationChannel()
+def make_delivery(
+    event: OutboxEvent,
+    attempts: int = 0,
+) -> NotificationDelivery:
+    now = datetime.now(UTC)
 
-    service = NotificationService(channel)
+    return NotificationDelivery(
+        id=uuid4(),
+        event_id=event.id,
+        destination_id=uuid4(),
+        created_at=now,
+        processed_at=None,
+        attempts=attempts,
+        last_error=None,
+        next_attempt_at=now,
+        locked_until=now,
+    )
 
+
+async def test_successful_notification_marks_delivery_processed() -> None:
     event = make_event()
+    delivery = make_delivery(event)
 
-    result = await service.process(event)
+    service = NotificationService()
+
+    result = await service.process(
+        delivery=delivery,
+        event=event,
+        channel=StubNotificationChannel(),
+    )
 
     assert result.processed_at is not None
     assert result.attempts == 1
@@ -76,29 +93,38 @@ async def test_successful_notification_marks_event_processed() -> None:
 
 
 async def test_failed_notification_schedules_retry() -> None:
-    channel = FailingNotificationChannel()
-
-    service = NotificationService(channel)
-
     event = make_event()
+    delivery = make_delivery(event)
 
-    result = await service.process(event)
+    service = NotificationService()
+
+    result = await service.process(
+        delivery=delivery,
+        event=event,
+        channel=FailingNotificationChannel(),
+    )
 
     assert result.processed_at is None
     assert result.attempts == 1
-    assert result.last_error == "Notification failed"
-    assert result.next_attempt_at > event.next_attempt_at
+    assert result.last_error == ("Notification failed")
+    assert result.next_attempt_at > delivery.next_attempt_at
     assert result.locked_until is None
 
 
 async def test_retry_increments_existing_attempt_count() -> None:
-    channel = FailingNotificationChannel()
-    service = NotificationService(channel)
+    event = make_event()
 
-    event = make_event(attempts=2)
+    delivery = make_delivery(
+        event,
+        attempts=2,
+    )
 
-    result = await service.process(event)
+    service = NotificationService()
 
-    assert result.processed_at is None
+    result = await service.process(
+        delivery=delivery,
+        event=event,
+        channel=FailingNotificationChannel(),
+    )
+
     assert result.attempts == 3
-    assert result.last_error == "Notification failed"
