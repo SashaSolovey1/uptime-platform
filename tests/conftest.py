@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from typing import Literal
 
 import pytest
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,6 +16,10 @@ from uptime_platform.monitors.models import MonitorModel
 
 class TestSettings(BaseSettings):
     database_url: str
+    notification_channel: Literal[
+        "console",
+        "webhook",
+    ] = "console"
 
     model_config = SettingsConfigDict(
         env_file=".env.test",

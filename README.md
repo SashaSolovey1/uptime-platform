@@ -2,25 +2,30 @@
 
 A self-hosted uptime monitoring and incident management platform built with FastAPI.
 
-> **Status:** Early beta. The project is under active development.
+> **Status:** MVP. The project is under active development.
 
 ## Current Features
 
 - Monitor CRUD API
 - Asynchronous HTTP checks
 - Automatic monitor scheduling
+- Configurable check intervals and timeouts
 - Check history stored in PostgreSQL
 - HTTP status code and response time tracking
 - Network error and timeout handling
 - Monitor states: `pending`, `up`, `down`, `paused`
 - Failure and recovery thresholds
+- Consecutive success and failure tracking
 - Automatic monitor state transitions
 - Automatic incident creation and resolution
 - Incidents API with status and monitor filtering
 - Transactional outbox for incident events
 - Separate notification worker
-- Notification retry tracking
+- Safe outbox claiming for multiple workers
+- Notification retry with exponential backoff
 - Console notification channel
+- Webhook notification channel
+- HMAC-SHA256 signed webhooks
 - Async SQLAlchemy repositories
 - Alembic migrations
 - Unit, API, and PostgreSQL integration tests
@@ -68,7 +73,7 @@ Start PostgreSQL:
 make dev-up
 ```
 
-Apply migrations:
+Apply database migrations:
 
 ```bash
 make migrate
@@ -100,7 +105,32 @@ Start the notification worker:
 make notification-worker
 ```
 
-For local development, the API, scheduler, and notification worker should run as separate processes.
+The API, scheduler, and notification worker run as separate processes.
+
+## Notifications
+
+Console notifications are enabled by default:
+
+```env
+NOTIFICATION_CHANNEL=console
+```
+
+Webhook notifications:
+
+```env
+NOTIFICATION_CHANNEL=webhook
+WEBHOOK_URL=https://example.com/webhook
+WEBHOOK_SECRET=change-me
+WEBHOOK_TIMEOUT_SECONDS=5
+```
+
+Webhook requests are signed using HMAC-SHA256 and include:
+
+```text
+X-Uptime-Event-ID
+X-Uptime-Timestamp
+X-Uptime-Signature
+```
 
 ## Development Commands
 
@@ -128,7 +158,7 @@ Run all tests:
 make test
 ```
 
-Run tests against a fresh test database:
+Run all tests against a fresh test database:
 
 ```bash
 make test-fresh
@@ -192,9 +222,8 @@ make migrate
 
 ## Planned Features
 
-- Safe outbox processing with multiple workers
-- Notification retry backoff
-- Webhook notifications
+- Notification channels stored and configured through the API
+- Multiple notification destinations
 - Telegram notifications
 - Email notifications
 - Maintenance windows
@@ -209,9 +238,9 @@ make migrate
 - Prometheus metrics
 - Grafana dashboards
 - Redis-backed queues and distributed coordination
-- Docker production setup
+- Production Docker setup
 - CI/CD
 
 ## Version
 
-`0.1.0-beta`
+`0.1.0`

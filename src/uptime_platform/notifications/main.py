@@ -1,9 +1,10 @@
 import asyncio
 import logging
 
+from uptime_platform.core.config import get_settings
 from uptime_platform.db.session import SessionFactory
-from uptime_platform.notifications.console import (
-    ConsoleNotificationChannel,
+from uptime_platform.notifications.factory import (
+    create_notification_channel,
 )
 from uptime_platform.notifications.worker import (
     NotificationWorker,
@@ -18,16 +19,20 @@ async def main() -> None:
         format=("%(asctime)s %(levelname)s %(name)s %(message)s"),
     )
 
-    logger.info("notification worker started")
+    settings = get_settings()
 
-    channel = ConsoleNotificationChannel()
+    async with create_notification_channel(settings) as channel:
+        logger.info(
+            "notification worker started channel=%s",
+            settings.notification_channel,
+        )
 
-    worker = NotificationWorker(
-        session_factory=SessionFactory,
-        channel=channel,
-    )
+        worker = NotificationWorker(
+            session_factory=SessionFactory,
+            channel=channel,
+        )
 
-    await worker.run_forever()
+        await worker.run_forever()
 
 
 if __name__ == "__main__":
