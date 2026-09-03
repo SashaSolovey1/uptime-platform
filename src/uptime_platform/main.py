@@ -9,6 +9,9 @@ from uptime_platform.incidents.router import (
 from uptime_platform.monitors.router import (
     router as monitors_router,
 )
+from uptime_platform.notifications.router import (
+    router as notifications_router,
+)
 
 app = FastAPI(
     title="Uptime Platform API",
@@ -18,3 +21,4 @@ app = FastAPI(
 app.include_router(monitors_router)
 app.include_router(checks_router)
 app.include_router(incidents_router)
+app.include_router(notifications_router)
