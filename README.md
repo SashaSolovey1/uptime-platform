@@ -1,4 +1,4 @@
-[![Docker Pulls](https://img.shields.io/docker/pulls/sashasolovey/uptime-platform)](https://hub.docker.com/r/sashastudent/uptime-platform)
+[![Docker Pulls](https://img.shields.io/docker/pulls/sashastudent/uptime-platform)](https://hub.docker.com/r/sashastudent/uptime-platform)
 # Uptime Platform
 
 A self-hosted uptime monitoring and incident management platform built with FastAPI.
