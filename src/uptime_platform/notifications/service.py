@@ -11,14 +11,13 @@ from uptime_platform.notifications.exceptions import (
 from uptime_platform.notifications.protocols import (
     NotificationChannelProtocol,
 )
-from uptime_platform.outbox.entities import OutboxEvent
-from uptime_platform.outbox.protocols import (
-    OutboxRepositoryProtocol,
-)
-
 from uptime_platform.notifications.repository_protocols import (
     NotificationDeliveryRepositoryProtocol,
     NotificationDestinationRepositoryProtocol,
+)
+from uptime_platform.outbox.entities import OutboxEvent
+from uptime_platform.outbox.protocols import (
+    OutboxRepositoryProtocol,
 )
 
 

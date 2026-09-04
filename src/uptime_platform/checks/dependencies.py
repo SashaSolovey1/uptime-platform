@@ -19,6 +19,12 @@ from uptime_platform.incidents.dependencies import (
 from uptime_platform.incidents.protocols import (
     IncidentRepositoryProtocol,
 )
+from uptime_platform.maintenance.dependencies import (
+    get_maintenance_repository,
+)
+from uptime_platform.maintenance.protocols import (
+    MaintenanceWindowRepositoryProtocol,
+)
 from uptime_platform.monitors.dependencies import get_monitor_repository
 from uptime_platform.monitors.protocols import MonitorRepositoryProtocol
 from uptime_platform.outbox.dependencies import (
@@ -59,6 +65,10 @@ def get_check_service(
         OutboxRepositoryProtocol,
         Depends(get_outbox_repository),
     ],
+    maintenance_repository: Annotated[
+        MaintenanceWindowRepositoryProtocol,
+        Depends(get_maintenance_repository),
+    ],
     checker: Annotated[
         HttpCheckerProtocol,
         Depends(get_http_checker),
@@ -69,5 +79,6 @@ def get_check_service(
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )

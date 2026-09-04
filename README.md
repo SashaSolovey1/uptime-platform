@@ -34,6 +34,9 @@ A self-hosted uptime monitoring and incident management platform built with Fast
 - Async SQLAlchemy repositories
 - Alembic migrations
 - Unit, API, and PostgreSQL integration tests
+- Maintenance windows configured through the API
+- Monitoring continues during maintenance windows
+- State transitions, incidents, and notifications are suppressed during maintenance
 
 ## Tech Stack
 
@@ -237,7 +240,6 @@ make migrate
 
 - Telegram notifications
 - Email notifications
-- Maintenance windows
 - Public status pages
 - TCP monitoring
 - DNS monitoring
@@ -262,4 +264,4 @@ docker pull sashastudent/uptime-platform:0.1.0
 
 ## Version
 
-`0.1.1`
+`0.1.2`

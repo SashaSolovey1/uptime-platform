@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -9,6 +9,10 @@ from uptime_platform.checks.service import CheckService
 from uptime_platform.incidents.entities import Incident, IncidentStatus
 from uptime_platform.incidents.in_memory_repository import (
     InMemoryIncidentRepository,
+)
+from uptime_platform.maintenance.entities import MaintenanceWindow
+from uptime_platform.maintenance.in_memory_repository import (
+    InMemoryMaintenanceWindowRepository,
 )
 from uptime_platform.monitors.entities import (
     Monitor,
@@ -66,11 +70,28 @@ def make_monitor(
     )
 
 
+def make_maintenance_window(
+    monitor_id,
+    *,
+    starts_at: datetime,
+    ends_at: datetime,
+) -> MaintenanceWindow:
+    return MaintenanceWindow(
+        id=uuid4(),
+        monitor_id=monitor_id,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        reason="Deployment",
+        created_at=datetime.now(UTC),
+    )
+
+
 async def test_successful_check_changes_monitor_to_up() -> None:
     monitor_repository = InMemoryMonitorRepository()
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -90,6 +111,7 @@ async def test_successful_check_changes_monitor_to_up() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -115,6 +137,7 @@ async def test_first_success_does_not_recover_down_monitor() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -134,6 +157,7 @@ async def test_first_success_does_not_recover_down_monitor() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -152,6 +176,7 @@ async def test_second_success_recovers_down_monitor() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -174,6 +199,7 @@ async def test_second_success_recovers_down_monitor() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -192,6 +218,7 @@ async def test_failed_check_keeps_down_monitor_down() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -211,6 +238,7 @@ async def test_failed_check_keeps_down_monitor_down() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -227,6 +255,7 @@ async def test_paused_monitor_keeps_paused_status() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -246,6 +275,7 @@ async def test_paused_monitor_keeps_paused_status() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -262,6 +292,7 @@ async def test_nonexistent_monitor_is_not_checked() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -277,6 +308,7 @@ async def test_nonexistent_monitor_is_not_checked() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -291,6 +323,7 @@ async def test_check_is_saved_to_history() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -310,6 +343,7 @@ async def test_check_is_saved_to_history() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -335,6 +369,7 @@ async def test_get_history_returns_none_for_nonexistent_monitor() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -350,6 +385,7 @@ async def test_get_history_returns_none_for_nonexistent_monitor() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -366,6 +402,7 @@ async def test_third_failure_marks_monitor_down() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -388,6 +425,7 @@ async def test_third_failure_marks_monitor_down() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -406,6 +444,7 @@ async def test_monitor_down_transition_creates_incident() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -428,6 +467,7 @@ async def test_monitor_down_transition_creates_incident() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -466,6 +506,7 @@ async def test_monitor_recovery_resolves_incident() -> None:
     check_repository = InMemoryCheckRepository()
     incident_repository = InMemoryIncidentRepository()
     outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
 
     checker = StubHttpChecker(
         CheckResult(
@@ -498,6 +539,7 @@ async def test_monitor_recovery_resolves_incident() -> None:
         check_repository=check_repository,
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
         checker=checker,
     )
 
@@ -531,3 +573,231 @@ async def test_monitor_recovery_resolves_incident() -> None:
     assert event.payload["incident_id"] == str(resolved_incident.id)
 
     assert event.payload["monitor_id"] == str(monitor.id)
+
+
+async def test_failed_check_during_maintenance_does_not_change_monitor_state() -> None:
+    monitor_repository = InMemoryMonitorRepository()
+    check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
+
+    checker = StubHttpChecker(
+        CheckResult(
+            success=False,
+            response_time_ms=2000.0,
+            status_code=503,
+            error=None,
+        )
+    )
+
+    monitor = make_monitor(
+        status=MonitorStatus.UP,
+        consecutive_failures=2,
+    )
+
+    await monitor_repository.create(monitor)
+
+    now = datetime.now(UTC)
+
+    maintenance = make_maintenance_window(
+        monitor.id,
+        starts_at=now - timedelta(minutes=5),
+        ends_at=now + timedelta(minutes=5),
+    )
+
+    await maintenance_repository.create(maintenance)
+
+    service = CheckService(
+        monitor_repository=monitor_repository,
+        check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
+        checker=checker,
+    )
+
+    check = await service.run(monitor.id)
+
+    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+
+    assert check is not None
+    assert check.success is False
+
+    assert updated_monitor is not None
+    assert updated_monitor.status is MonitorStatus.UP
+
+    assert updated_monitor.consecutive_failures == monitor.consecutive_failures
+    assert updated_monitor.consecutive_successes == monitor.consecutive_successes
+
+    assert updated_monitor.next_check_at > monitor.next_check_at
+
+    history = await service.get_history(
+        monitor_id=monitor.id,
+        limit=50,
+    )
+
+    assert history is not None
+    assert len(history) == 1
+    assert history[0].success is False
+
+    incident = await incident_repository.get_open_by_monitor_id(monitor.id)
+
+    assert incident is None
+
+    events = await outbox_repository.claim_pending(
+        limit=10,
+        max_attempts=3,
+        now=datetime.now(UTC),
+        locked_until=datetime.now(UTC),
+    )
+
+    assert events == []
+
+
+async def test_successful_check_during_maintenance_does_not_resolve_incident() -> None:
+    monitor_repository = InMemoryMonitorRepository()
+    check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
+
+    checker = StubHttpChecker(
+        CheckResult(
+            success=True,
+            response_time_ms=50.0,
+            status_code=200,
+            error=None,
+        )
+    )
+
+    monitor = make_monitor(
+        status=MonitorStatus.DOWN,
+        consecutive_successes=1,
+    )
+
+    await monitor_repository.create(monitor)
+
+    incident = Incident(
+        id=uuid4(),
+        monitor_id=monitor.id,
+        status=IncidentStatus.OPEN,
+        started_at=datetime.now(UTC),
+        resolved_at=None,
+    )
+
+    await incident_repository.create(incident)
+
+    now = datetime.now(UTC)
+
+    maintenance = make_maintenance_window(
+        monitor.id,
+        starts_at=now - timedelta(minutes=5),
+        ends_at=now + timedelta(minutes=5),
+    )
+
+    await maintenance_repository.create(maintenance)
+
+    service = CheckService(
+        monitor_repository=monitor_repository,
+        check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
+        checker=checker,
+    )
+
+    check = await service.run(monitor.id)
+
+    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+
+    assert check is not None
+    assert check.success is True
+
+    assert updated_monitor is not None
+    assert updated_monitor.status is MonitorStatus.DOWN
+
+    assert updated_monitor.consecutive_successes == 1
+    assert updated_monitor.consecutive_failures == 0
+
+    open_incident = await incident_repository.get_open_by_monitor_id(monitor.id)
+
+    assert open_incident is not None
+    assert open_incident.id == incident.id
+    assert open_incident.status is IncidentStatus.OPEN
+    assert open_incident.resolved_at is None
+
+    events = await outbox_repository.claim_pending(
+        limit=10,
+        max_attempts=3,
+        now=datetime.now(UTC),
+        locked_until=datetime.now(UTC),
+    )
+
+    assert events == []
+
+
+async def test_expired_maintenance_does_not_suppress_monitor_transition() -> None:
+    monitor_repository = InMemoryMonitorRepository()
+    check_repository = InMemoryCheckRepository()
+    incident_repository = InMemoryIncidentRepository()
+    outbox_repository = InMemoryOutboxRepository()
+    maintenance_repository = InMemoryMaintenanceWindowRepository()
+
+    checker = StubHttpChecker(
+        CheckResult(
+            success=False,
+            response_time_ms=2000.0,
+            status_code=503,
+            error=None,
+        )
+    )
+
+    monitor = make_monitor(
+        status=MonitorStatus.UP,
+        consecutive_failures=2,
+    )
+
+    await monitor_repository.create(monitor)
+
+    now = datetime.now(UTC)
+
+    maintenance = make_maintenance_window(
+        monitor.id,
+        starts_at=now - timedelta(hours=2),
+        ends_at=now - timedelta(hours=1),
+    )
+
+    await maintenance_repository.create(maintenance)
+
+    service = CheckService(
+        monitor_repository=monitor_repository,
+        check_repository=check_repository,
+        incident_repository=incident_repository,
+        outbox_repository=outbox_repository,
+        maintenance_repository=maintenance_repository,
+        checker=checker,
+    )
+
+    await service.run(monitor.id)
+
+    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+
+    assert updated_monitor is not None
+    assert updated_monitor.status is MonitorStatus.DOWN
+    assert updated_monitor.consecutive_failures == 3
+
+    incident = await incident_repository.get_open_by_monitor_id(monitor.id)
+
+    assert incident is not None
+    assert incident.status is IncidentStatus.OPEN
+
+    events = await outbox_repository.claim_pending(
+        limit=10,
+        max_attempts=3,
+        now=datetime.now(UTC),
+        locked_until=datetime.now(UTC),
+    )
+
+    assert len(events) == 1
+    assert events[0].event_type is OutboxEventType.INCIDENT_OPENED

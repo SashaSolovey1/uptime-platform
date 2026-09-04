@@ -17,6 +17,9 @@ from uptime_platform.incidents.in_memory_repository import (
     InMemoryIncidentRepository,
 )
 from uptime_platform.main import app
+from uptime_platform.maintenance.in_memory_repository import (
+    InMemoryMaintenanceWindowRepository,
+)
 from uptime_platform.monitors.entities import (
     Monitor,
     MonitorStatus,
@@ -66,11 +69,17 @@ def outbox_repository() -> InMemoryOutboxRepository:
 
 
 @pytest.fixture
+def maintenance_repository() -> InMemoryMaintenanceWindowRepository:
+    return InMemoryMaintenanceWindowRepository()
+
+
+@pytest.fixture
 async def client(
     monitor_repository: InMemoryMonitorRepository,
     check_repository: InMemoryCheckRepository,
     incident_repository: InMemoryIncidentRepository,
     outbox_repository: InMemoryOutboxRepository,
+    maintenance_repository: InMemoryMaintenanceWindowRepository,
 ) -> AsyncIterator[httpx2.AsyncClient]:
     def override_check_service() -> CheckService:
         return CheckService(
@@ -78,6 +87,7 @@ async def client(
             check_repository=check_repository,
             incident_repository=incident_repository,
             outbox_repository=outbox_repository,
+            maintenance_repository=maintenance_repository,
             checker=StubHttpChecker(),
         )
 

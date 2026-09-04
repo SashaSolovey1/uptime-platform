@@ -17,6 +17,9 @@ from uptime_platform.incidents.entities import (
 from uptime_platform.incidents.protocols import (
     IncidentRepositoryProtocol,
 )
+from uptime_platform.maintenance.protocols import (
+    MaintenanceWindowRepositoryProtocol,
+)
 from uptime_platform.monitors.entities import MonitorStatus
 from uptime_platform.monitors.protocols import MonitorRepositoryProtocol
 from uptime_platform.monitors.state import apply_check_result
@@ -37,12 +40,14 @@ class CheckService:
         incident_repository: IncidentRepositoryProtocol,
         outbox_repository: OutboxRepositoryProtocol,
         checker: HttpCheckerProtocol,
+        maintenance_repository: MaintenanceWindowRepositoryProtocol,
     ) -> None:
         self._monitor_repository = monitor_repository
         self._check_repository = check_repository
         self._incident_repository = incident_repository
         self._outbox_repository = outbox_repository
         self._checker = checker
+        self._maintenance_repository = maintenance_repository
 
     async def run(
         self,
@@ -88,6 +93,23 @@ class CheckService:
             monitor_id=monitor.id,
             result=result,
         )
+
+        maintenance = await self._maintenance_repository.get_active(
+            monitor_id=monitor.id,
+            now=check.checked_at,
+        )
+
+        if maintenance is not None:
+            updated_monitor = replace(
+                monitor,
+                next_check_at=(
+                    check.checked_at + timedelta(seconds=monitor.interval_seconds)
+                ),
+            )
+
+            await self._monitor_repository.update(updated_monitor)
+
+            return check
 
         updated_monitor = apply_check_result(
             monitor=monitor,

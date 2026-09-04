@@ -10,6 +10,7 @@ from uptime_platform.checks.models import CheckModel  # noqa: F401
 from uptime_platform.core.config import get_settings
 from uptime_platform.db.base import Base
 from uptime_platform.incidents.models import IncidentModel  # noqa: F401
+from uptime_platform.maintenance.models import MaintenanceWindowModel  # noqa: F401
 from uptime_platform.monitors.models import MonitorModel  # noqa: F401
 from uptime_platform.notifications.models import (
     NotificationDeliveryModel,  # noqa: F401

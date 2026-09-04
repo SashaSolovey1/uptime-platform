@@ -15,6 +15,9 @@ from uptime_platform.checks.sqlalchemy_repository import (
 from uptime_platform.incidents.sqlalchemy_repository import (
     SqlAlchemyIncidentRepository,
 )
+from uptime_platform.maintenance.sqlalchemy_repository import (
+    SqlAlchemyMaintenanceWindowRepository,
+)
 from uptime_platform.monitors.entities import Monitor
 from uptime_platform.monitors.sqlalchemy_repository import (
     SqlAlchemyMonitorRepository,
@@ -95,11 +98,14 @@ class Scheduler:
 
                     outbox_repository = SqlAlchemyOutboxRepository(session)
 
+                    maintenance = SqlAlchemyMaintenanceWindowRepository(session)
+
                     service = CheckService(
                         monitor_repository=monitor_repository,
                         check_repository=check_repository,
                         incident_repository=incident_repository,
                         outbox_repository=outbox_repository,
+                        maintenance=maintenance,
                         checker=self._checker,
                     )
 
