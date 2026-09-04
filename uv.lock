@@ -783,19 +783,19 @@ wheels = [
 
 [[package]]
 name = "uptime-platform"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
+    { name = "httpx2" },
     { name = "pydantic-settings" },
     { name = "sqlalchemy" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx2" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -805,13 +805,13 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.19.1" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = ">=0.141.1" },
+    { name = "httpx2", specifier = ">=2.12.0" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "sqlalchemy", specifier = ">=2.0.52" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx2", specifier = ">=2.12.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.16.5" },
 ]

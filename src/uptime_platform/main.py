@@ -18,6 +18,15 @@ app = FastAPI(
     version="0.1.0",
 )
 
+@app.get(
+    "/health",
+    include_in_schema=False,
+)
+async def health() -> dict[str, str]:
+    return {
+        "status": "ok",
+    }
+
 app.include_router(monitors_router)
 app.include_router(checks_router)
 app.include_router(incidents_router)
