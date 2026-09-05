@@ -33,6 +33,8 @@ RUN python -m pip uninstall -y pip
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
+COPY --from=builder /app/alembic.ini /app/alembic.ini
+COPY --from=builder /app/migrations /app/migrations
 
 LABEL org.opencontainers.image.title="Uptime Platform"
 LABEL org.opencontainers.image.description="Self-hosted uptime monitoring and incident management platform"
