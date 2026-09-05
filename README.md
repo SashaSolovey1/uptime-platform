@@ -7,36 +7,19 @@ A self-hosted uptime monitoring and incident management platform built with Fast
 
 ## Current Features
 
-- Monitor CRUD API
-- Asynchronous HTTP checks
-- Automatic monitor scheduling
-- Configurable check intervals and timeouts
-- Check history stored in PostgreSQL
-- HTTP status code and response time tracking
-- Network error and timeout handling
-- Monitor states: `pending`, `up`, `down`, `paused`
-- Failure and recovery thresholds
-- Consecutive success and failure tracking
-- Automatic monitor state transitions
+- HTTP uptime monitoring with configurable intervals and timeouts
+- Automatic scheduling and check history
+- Monitor states with failure and recovery thresholds
 - Automatic incident creation and resolution
-- Incidents API with status and monitor filtering
-- Transactional outbox for incident events
-- Notification destinations configured through the API
+- Maintenance windows
+- Public status pages
 - Multiple notification destinations
-- Independent delivery state for each destination
-- Separate notification worker
-- PostgreSQL `FOR UPDATE SKIP LOCKED` worker claiming
-- Lease-based delivery processing
-- Notification retry with exponential backoff
-- Webhook notification channel
-- HMAC-SHA256 signed webhooks
-- Webhook event IDs for idempotent receivers
-- Async SQLAlchemy repositories
-- Alembic migrations
+- Webhook notifications with HMAC-SHA256 signatures
+- Reliable notification delivery with retries
+- Incident and monitoring APIs
+- PostgreSQL persistence and Alembic migrations
 - Unit, API, and PostgreSQL integration tests
-- Maintenance windows configured through the API
-- Monitoring continues during maintenance windows
-- State transitions, incidents, and notifications are suppressed during maintenance
+- Docker Compose deployment
 
 ## Tech Stack
 
@@ -238,21 +221,14 @@ make migrate
 
 ## Planned Features
 
-- Telegram notifications
-- Email notifications
-- Public status pages
-- TCP monitoring
-- DNS monitoring
-- TLS certificate monitoring
+- Telegram and email notifications
+- TCP, DNS, and TLS certificate monitoring
 - Organizations and projects
-- RBAC
-- API keys
+- RBAC and API keys
 - Audit log
-- Prometheus metrics
-- Grafana dashboards
-- Redis-backed queues and distributed coordination
+- Prometheus metrics and Grafana dashboards
+- Redis-backed distributed coordination
 - Encrypted notification credentials
-- Production Docker setup
 - CI/CD
 
 ## Docker
@@ -260,8 +236,4 @@ make migrate
 The official container image is available on Docker Hub:
 
 ```bash
-docker pull sashastudent/uptime-platform:0.1.0
-
-## Version
-
-`0.1.3`
+docker pull sashastudent/uptime-platform:0.2.0

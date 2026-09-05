@@ -17,6 +17,7 @@ from uptime_platform.notifications.models import (
     NotificationDestinationModel,  # noqa: F401
 )
 from uptime_platform.outbox.models import OutboxEventModel  # noqa: F401
+from uptime_platform.status_pages.models import StatusPageModel  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
