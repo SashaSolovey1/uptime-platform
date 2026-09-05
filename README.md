@@ -1,44 +1,25 @@
-[![Docker Pulls](https://img.shields.io/docker/pulls/sashastudent/uptime-platform)](https://hub.docker.com/r/sashastudent/uptime-platform)
 # Uptime Platform
 
-A self-hosted uptime monitoring and incident management platform built with FastAPI.
+[![Docker Pulls](https://img.shields.io/docker/pulls/sashastudent/uptime-platform)](https://hub.docker.com/r/sashastudent/uptime-platform)
+
+Self-hosted uptime monitoring, incident management, and public status pages built with FastAPI.
 
 > **Status:** MVP. The project is under active development.
 
-## Current Features
+## Features
 
-- HTTP uptime monitoring with configurable intervals and timeouts
-- Automatic scheduling and check history
-- Monitor states with failure and recovery thresholds
-- Automatic incident creation and resolution
+- HTTP uptime monitoring with automatic scheduling and check history
+- Automatic incident detection and recovery
 - Maintenance windows
 - Public status pages
-- Multiple notification destinations
-- Webhook notifications with HMAC-SHA256 signatures
-- Reliable notification delivery with retries
-- Incident and monitoring APIs
-- PostgreSQL persistence and Alembic migrations
-- Unit, API, and PostgreSQL integration tests
-- Docker Compose deployment
 - Uptime statistics with 24h, 7d, 30d, and custom time ranges
+- Multiple webhook notification destinations
+- Reliable notification delivery with retries and HMAC-SHA256 signatures
+- PostgreSQL persistence with Alembic migrations
+- Docker Compose deployment
+- Unit, API, and PostgreSQL integration tests
 
-## Tech Stack
-
-- Python 3.13
-- FastAPI
-- httpx2
-- SQLAlchemy
-- asyncpg
-- PostgreSQL
-- Alembic
-- Pydantic
-- asyncio
-- Docker Compose
-- pytest
-- Ruff
-- uv
-
-## Getting Started
+## Quick Start
 
 Clone the repository:
 
@@ -47,34 +28,16 @@ git clone https://github.com/SashaSolovey1/uptime-platform.git
 cd uptime-platform
 ```
 
-Install dependencies:
-
-```bash
-uv sync
-```
-
 Create the environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Start PostgreSQL:
+Start the platform:
 
 ```bash
-make dev-up
-```
-
-Apply database migrations:
-
-```bash
-make migrate
-```
-
-Start the API:
-
-```bash
-uv run fastapi dev src/uptime_platform/main.py
+docker compose up -d
 ```
 
 API documentation:
@@ -83,27 +46,31 @@ API documentation:
 http://127.0.0.1:8000/docs
 ```
 
-## Background Processes
+Health check:
 
-Start the monitor scheduler:
-
-```bash
-make scheduler
+```text
+http://127.0.0.1:8000/health
 ```
 
-Start the notification worker:
+## Monitor Statistics
 
-```bash
-make notification-worker
+Get statistics for a preset period:
+
+```text
+GET /api/v1/monitors/{monitor_id}/statistics?period=7d
 ```
 
-The API, scheduler, and notification worker run as separate processes.
+Or use a custom time range:
+
+```text
+GET /api/v1/monitors/{monitor_id}/statistics?starts_at=2026-09-01T00:00:00Z&ends_at=2026-09-05T00:00:00Z
+```
+
+Statistics include uptime percentage, check counts, and average response time.
 
 ## Notification Destinations
 
-Notification destinations are stored in PostgreSQL and configured through the API.
-
-Create a webhook destination:
+Webhook destinations are configured through the API.
 
 ```bash
 curl -X POST \
@@ -118,146 +85,70 @@ curl -X POST \
   }'
 ```
 
-The webhook secret is accepted when creating or updating a destination but is not returned by the API.
+Webhook requests are signed with HMAC-SHA256 and include event ID, timestamp, and signature headers.
 
-Each incident event is fanned out into an independent delivery for every enabled notification destination.
+## Development
 
-Webhook requests include:
+Install dependencies:
 
-```text
-X-Uptime-Event-ID
-X-Uptime-Timestamp
-X-Uptime-Signature
+```bash
+uv sync
 ```
 
-The request body and timestamp are signed using HMAC-SHA256.
-
-## Monitor Statistics
-
-Statistics are calculated from check history stored in PostgreSQL.
-
-Available preset periods:
-
-```text
-24h
-7d
-30d
-
-Example:
-GET /api/v1/monitors/{monitor_id}/statistics?period=7d
-
-Statistics include:
-
-- uptime percentage
-- total checks
-- successful and failed checks
-- average response time
-```
-
-## Development Commands
-
-Start PostgreSQL:
+Start the development database:
 
 ```bash
 make dev-up
 ```
 
-Stop PostgreSQL:
-
-```bash
-make dev-down
-```
-
 Apply migrations:
 
 ```bash
 make migrate
 ```
 
-Run all tests:
+Start the API:
 
 ```bash
-make test
+uv run fastapi dev src/uptime_platform/main.py
 ```
 
-Run all tests against a fresh test database:
-
-```bash
-make test-fresh
-```
-
-Run unit tests:
-
-```bash
-make test-unit
-```
-
-Run API tests:
-
-```bash
-make test-api
-```
-
-Run PostgreSQL integration tests:
-
-```bash
-make test-integration
-```
-
-Format code:
-
-```bash
-make format
-```
-
-Run lint checks:
-
-```bash
-make lint
-```
-
-Run the scheduler:
+Run the scheduler and notification worker in separate terminals:
 
 ```bash
 make scheduler
-```
-
-Run the notification worker:
-
-```bash
 make notification-worker
 ```
 
-## Database Migrations
-
-Create a migration:
+Run checks:
 
 ```bash
-uv run alembic revision --autogenerate -m "migration description"
+make format
+make lint
+make test-fresh
 ```
 
-Apply migrations:
+## Tech Stack
 
-```bash
-make migrate
-```
+Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · Docker Compose · pytest · Ruff · uv
 
-## Planned Features
+## Planned
 
 - Telegram and email notifications
 - TCP, DNS, and TLS certificate monitoring
-- Organizations and projects
-- RBAC and API keys
-- Audit log
+- Organizations, RBAC, and API keys
 - Prometheus metrics and Grafana dashboards
-- Redis-backed distributed coordination
 - Encrypted notification credentials
 - CI/CD
 
 ## Docker
 
-The official container image is available on Docker Hub:
+The official image is available on Docker Hub:
 
 ```bash
 docker pull sashastudent/uptime-platform:latest
 ```
+
+## License
+
+Licensed under the [MIT License](LICENSE).
