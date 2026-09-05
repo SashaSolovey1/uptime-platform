@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
 
 import httpx2
 from sqlalchemy.ext.asyncio import (
@@ -21,9 +20,6 @@ from uptime_platform.notifications.service import (
 from uptime_platform.notifications.sqlalchemy_repository import (
     SqlAlchemyNotificationDeliveryRepository,
     SqlAlchemyNotificationDestinationRepository,
-)
-from uptime_platform.outbox.entities import (
-    OutboxEvent,
 )
 from uptime_platform.outbox.sqlalchemy_repository import (
     SqlAlchemyOutboxRepository,
@@ -77,21 +73,7 @@ class NotificationWorker:
     async def run_once(
         self,
     ) -> tuple[int, int]:
-        events = await self._claim_outbox_events()
-
-        fanout_count = 0
-
-        for event in events:
-            try:
-                await self._fan_out_event(event)
-
-                fanout_count += 1
-
-            except Exception:
-                logger.exception(
-                    "notification fan-out failed event_id=%s",
-                    event.id,
-                )
+        fanout_count = await self._fan_out_pending_events()
 
         deliveries = await self._claim_deliveries()
 
@@ -105,59 +87,15 @@ class NotificationWorker:
             len(deliveries),
         )
 
-    async def _claim_outbox_events(
-        self,
-    ) -> list[OutboxEvent]:
-        now = datetime.now(UTC)
-
-        locked_until = now + timedelta(seconds=self._lease_seconds)
-
-        async with self._session_factory() as session, session.begin():
-            repository = SqlAlchemyOutboxRepository(session)
-
-            return await repository.claim_pending(
-                limit=self._batch_size,
-                max_attempts=self._max_attempts,
-                now=now,
-                locked_until=locked_until,
-            )
-
-    async def _fan_out_event(
-        self,
-        event: OutboxEvent,
-    ) -> None:
-        async with self._session_factory() as session, session.begin():
-            destination_repository = SqlAlchemyNotificationDestinationRepository(
-                session
-            )
-
-            delivery_repository = SqlAlchemyNotificationDeliveryRepository(session)
-
-            outbox_repository = SqlAlchemyOutboxRepository(session)
-
-            service = NotificationFanoutService(
-                destination_repository=destination_repository,
-                delivery_repository=delivery_repository,
-                outbox_repository=outbox_repository,
-            )
-
-            await service.fan_out(event)
-
     async def _claim_deliveries(
         self,
     ) -> list[NotificationDelivery]:
-        now = datetime.now(UTC)
-
-        locked_until = now + timedelta(seconds=self._lease_seconds)
 
         async with self._session_factory() as session, session.begin():
             repository = SqlAlchemyNotificationDeliveryRepository(session)
 
             return await repository.claim_pending(
                 limit=self._batch_size,
-                max_attempts=self._max_attempts,
-                now=now,
-                locked_until=locked_until,
             )
 
     async def _process_delivery_safely(
@@ -237,3 +175,28 @@ class NotificationWorker:
             )
 
             return event, destination
+
+    async def _fan_out_pending_events(
+        self,
+    ) -> int:
+        async with self._session_factory() as session, session.begin():
+            outbox_repository = SqlAlchemyOutboxRepository(session)
+
+            destination_repository = SqlAlchemyNotificationDestinationRepository(
+                session
+            )
+
+            delivery_repository = SqlAlchemyNotificationDeliveryRepository(session)
+
+            events = await outbox_repository.claim_pending(limit=self._batch_size)
+
+            service = NotificationFanoutService(
+                destination_repository=destination_repository,
+                delivery_repository=delivery_repository,
+                outbox_repository=outbox_repository,
+            )
+
+            for event in events:
+                await service.fan_out(event)
+
+            return len(events)

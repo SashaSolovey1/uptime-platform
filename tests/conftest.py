@@ -1,5 +1,4 @@
 from collections.abc import AsyncIterator
-from typing import Literal
 
 import pytest
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,10 +15,6 @@ from uptime_platform.monitors.models import MonitorModel
 
 class TestSettings(BaseSettings):
     database_url: str
-    notification_channel: Literal[
-        "console",
-        "webhook",
-    ] = "console"
 
     model_config = SettingsConfigDict(
         env_file=".env.test",
@@ -33,18 +28,29 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture
-async def db_session() -> AsyncIterator[AsyncSession]:
+async def session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     settings = TestSettings()
 
     engine = create_async_engine(
         settings.database_url,
     )
 
-    session_factory = async_sessionmaker(
+    factory = async_sessionmaker(
         bind=engine,
         expire_on_commit=False,
     )
 
+    try:
+        yield factory
+
+    finally:
+        await engine.dispose()
+
+
+@pytest.fixture
+async def db_session(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> AsyncIterator[AsyncSession]:
     async with session_factory() as session:
         await session.execute(delete(CheckModel))
         await session.execute(delete(MonitorModel))
@@ -59,5 +65,3 @@ async def db_session() -> AsyncIterator[AsyncSession]:
             await session.execute(delete(CheckModel))
             await session.execute(delete(MonitorModel))
             await session.commit()
-
-    await engine.dispose()

@@ -1,7 +1,6 @@
-from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uptime_platform.outbox.entities import (
@@ -29,10 +28,6 @@ class SqlAlchemyOutboxRepository:
             payload=event.payload,
             created_at=event.created_at,
             processed_at=event.processed_at,
-            attempts=event.attempts,
-            last_error=event.last_error,
-            next_attempt_at=event.next_attempt_at,
-            locked_until=event.locked_until,
         )
 
         self._session.add(model)
@@ -59,21 +54,10 @@ class SqlAlchemyOutboxRepository:
     async def claim_pending(
         self,
         limit: int,
-        max_attempts: int,
-        now: datetime,
-        locked_until: datetime,
     ) -> list[OutboxEvent]:
         statement = (
             select(OutboxEventModel)
-            .where(
-                OutboxEventModel.processed_at.is_(None),
-                OutboxEventModel.attempts < max_attempts,
-                OutboxEventModel.next_attempt_at <= now,
-                or_(
-                    OutboxEventModel.locked_until.is_(None),
-                    OutboxEventModel.locked_until <= now,
-                ),
-            )
+            .where(OutboxEventModel.processed_at.is_(None))
             .order_by(OutboxEventModel.created_at)
             .limit(limit)
             .with_for_update(skip_locked=True)
@@ -81,14 +65,7 @@ class SqlAlchemyOutboxRepository:
 
         result = await self._session.execute(statement)
 
-        models = result.scalars().all()
-
-        for model in models:
-            model.locked_until = locked_until
-
-        await self._session.flush()
-
-        return [self._to_entity(model) for model in models]
+        return [self._to_entity(model) for model in result.scalars().all()]
 
     async def update(
         self,
@@ -103,10 +80,6 @@ class SqlAlchemyOutboxRepository:
             return None
 
         model.processed_at = event.processed_at
-        model.attempts = event.attempts
-        model.last_error = event.last_error
-        model.next_attempt_at = event.next_attempt_at
-        model.locked_until = event.locked_until
 
         await self._session.flush()
         await self._session.refresh(model)
@@ -123,8 +96,4 @@ class SqlAlchemyOutboxRepository:
             payload=model.payload,
             created_at=model.created_at,
             processed_at=model.processed_at,
-            attempts=model.attempts,
-            last_error=model.last_error,
-            next_attempt_at=model.next_attempt_at,
-            locked_until=model.locked_until,
         )

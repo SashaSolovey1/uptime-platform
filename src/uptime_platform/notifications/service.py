@@ -114,7 +114,6 @@ class NotificationFanoutService:
         processed_event = replace(
             event,
             processed_at=now,
-            locked_until=None,
         )
 
         await self._outbox_repository.update(processed_event)

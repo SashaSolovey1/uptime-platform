@@ -482,9 +482,6 @@ async def test_monitor_down_transition_creates_incident() -> None:
 
     events = await outbox_repository.claim_pending(
         limit=10,
-        max_attempts=3,
-        now=datetime.now(UTC),
-        locked_until=datetime.now(UTC),
     )
 
     assert len(events) == 1
@@ -498,7 +495,6 @@ async def test_monitor_down_transition_creates_incident() -> None:
     assert event.payload["monitor_id"] == str(monitor.id)
 
     assert event.processed_at is None
-    assert event.attempts == 0
 
 
 async def test_monitor_recovery_resolves_incident() -> None:
@@ -559,9 +555,6 @@ async def test_monitor_recovery_resolves_incident() -> None:
 
     events = await outbox_repository.claim_pending(
         limit=10,
-        max_attempts=3,
-        now=datetime.now(UTC),
-        locked_until=datetime.now(UTC),
     )
 
     assert len(events) == 1
@@ -647,9 +640,6 @@ async def test_failed_check_during_maintenance_does_not_change_monitor_state() -
 
     events = await outbox_repository.claim_pending(
         limit=10,
-        max_attempts=3,
-        now=datetime.now(UTC),
-        locked_until=datetime.now(UTC),
     )
 
     assert events == []
@@ -729,9 +719,6 @@ async def test_successful_check_during_maintenance_does_not_resolve_incident() -
 
     events = await outbox_repository.claim_pending(
         limit=10,
-        max_attempts=3,
-        now=datetime.now(UTC),
-        locked_until=datetime.now(UTC),
     )
 
     assert events == []
@@ -794,9 +781,6 @@ async def test_expired_maintenance_does_not_suppress_monitor_transition() -> Non
 
     events = await outbox_repository.claim_pending(
         limit=10,
-        max_attempts=3,
-        now=datetime.now(UTC),
-        locked_until=datetime.now(UTC),
     )
 
     assert len(events) == 1

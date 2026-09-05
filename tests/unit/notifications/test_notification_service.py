@@ -48,10 +48,6 @@ def make_event() -> OutboxEvent:
         },
         created_at=now,
         processed_at=None,
-        attempts=0,
-        last_error=None,
-        next_attempt_at=now,
-        locked_until=None,
     )
 
 

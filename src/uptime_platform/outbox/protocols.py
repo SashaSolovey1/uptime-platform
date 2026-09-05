@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -19,9 +18,6 @@ class OutboxRepositoryProtocol(Protocol):
     async def claim_pending(
         self,
         limit: int,
-        max_attempts: int,
-        now: datetime,
-        locked_until: datetime,
     ) -> list[OutboxEvent]: ...
 
     async def update(
