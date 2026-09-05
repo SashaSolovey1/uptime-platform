@@ -1,0 +1,59 @@
+from datetime import UTC, datetime, timedelta
+from uuid import UUID
+
+from uptime_platform.monitors.protocols import (
+    MonitorRepositoryProtocol,
+)
+from uptime_platform.statistics.entities import (
+    MonitorStatistics,
+)
+from uptime_platform.statistics.protocols import (
+    StatisticsRepositoryProtocol,
+)
+from uptime_platform.statistics.schemas import (
+    StatisticsPeriod,
+)
+
+_PERIODS = {
+    StatisticsPeriod.HOURS_24: timedelta(hours=24),
+    StatisticsPeriod.DAYS_7: timedelta(days=7),
+    StatisticsPeriod.DAYS_30: timedelta(days=30),
+}
+
+
+class StatisticsService:
+    def __init__(
+        self,
+        repository: StatisticsRepositoryProtocol,
+        monitor_repository: MonitorRepositoryProtocol,
+    ) -> None:
+        self._repository = repository
+        self._monitor_repository = monitor_repository
+
+    async def get_monitor_statistics(
+        self,
+        monitor_id: UUID,
+        period: StatisticsPeriod | None = None,
+        starts_at: datetime | None = None,
+        ends_at: datetime | None = None,
+    ) -> MonitorStatistics | None:
+        monitor = await self._monitor_repository.get_by_id(monitor_id)
+
+        if monitor is None:
+            return None
+
+        if starts_at is not None and ends_at is not None:
+            resolved_starts_at = starts_at.astimezone(UTC)
+            resolved_ends_at = ends_at.astimezone(UTC)
+        else:
+            resolved_period = period or StatisticsPeriod.HOURS_24
+
+            resolved_ends_at = datetime.now(UTC)
+
+            resolved_starts_at = resolved_ends_at - _PERIODS[resolved_period]
+
+        return await self._repository.get_monitor_statistics(
+            monitor_id=monitor_id,
+            starts_at=resolved_starts_at,
+            ends_at=resolved_ends_at,
+        )

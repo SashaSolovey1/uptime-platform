@@ -20,6 +20,7 @@ A self-hosted uptime monitoring and incident management platform built with Fast
 - PostgreSQL persistence and Alembic migrations
 - Unit, API, and PostgreSQL integration tests
 - Docker Compose deployment
+- Uptime statistics with 24h, 7d, 30d, and custom time ranges
 
 ## Tech Stack
 
@@ -131,6 +132,28 @@ X-Uptime-Signature
 
 The request body and timestamp are signed using HMAC-SHA256.
 
+## Monitor Statistics
+
+Statistics are calculated from check history stored in PostgreSQL.
+
+Available preset periods:
+
+```text
+24h
+7d
+30d
+
+Example:
+GET /api/v1/monitors/{monitor_id}/statistics?period=7d
+
+Statistics include:
+
+- uptime percentage
+- total checks
+- successful and failed checks
+- average response time
+```
+
 ## Development Commands
 
 Start PostgreSQL:
@@ -236,4 +259,5 @@ make migrate
 The official container image is available on Docker Hub:
 
 ```bash
-docker pull sashastudent/uptime-platform:0.2.0
+docker pull sashastudent/uptime-platform:latest
+```
