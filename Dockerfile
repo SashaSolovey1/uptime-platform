@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-slim AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
@@ -20,7 +20,19 @@ RUN uv sync \
     --frozen \
     --no-dev
 
-ENV PATH="/app/.venv/bin:$PATH"
+
+FROM python:3.13-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+RUN python -m pip uninstall -y pip
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/src /app/src
 
 LABEL org.opencontainers.image.title="Uptime Platform"
 LABEL org.opencontainers.image.description="Self-hosted uptime monitoring and incident management platform"
