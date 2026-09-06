@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from uptime_platform.notifications.entities import (
+    EmailDestinationConfig,
     NotificationDestination,
     NotificationDestinationConfig,
     TelegramDestinationConfig,
@@ -12,6 +13,8 @@ from uptime_platform.notifications.repository_protocols import (
     NotificationDestinationRepositoryProtocol,
 )
 from uptime_platform.notifications.schemas import (
+    EmailDestinationConfigCreate,
+    EmailDestinationConfigUpdate,
     NotificationDestinationCreate,
     NotificationDestinationUpdate,
     TelegramDestinationConfigCreate,
@@ -22,7 +25,11 @@ from uptime_platform.notifications.schemas import (
 
 
 def _create_config(
-    config: (WebhookDestinationConfigCreate | TelegramDestinationConfigCreate),
+    config: (
+        WebhookDestinationConfigCreate
+        | TelegramDestinationConfigCreate
+        | EmailDestinationConfigCreate
+    ),
 ) -> NotificationDestinationConfig:
     if isinstance(
         config,
@@ -42,12 +49,30 @@ def _create_config(
             chat_id=config.chat_id,
         )
 
+    if isinstance(
+        config,
+        EmailDestinationConfigCreate,
+    ):
+        return EmailDestinationConfig(
+            host=config.host,
+            port=config.port,
+            username=config.username,
+            password=config.password,
+            from_email=str(config.from_email),
+            to_email=str(config.to_email),
+            security=config.security,
+        )
+
     raise TypeError(f"Unsupported destination config: {type(config)}")
 
 
 def _update_config(
     current: NotificationDestinationConfig,
-    update: (WebhookDestinationConfigUpdate | TelegramDestinationConfigUpdate),
+    update: (
+        WebhookDestinationConfigUpdate
+        | TelegramDestinationConfigUpdate
+        | EmailDestinationConfigUpdate
+    ),
 ) -> NotificationDestinationConfig:
     if isinstance(
         current,
@@ -73,6 +98,37 @@ def _update_config(
                 update.bot_token if update.bot_token is not None else current.bot_token
             ),
             chat_id=(update.chat_id if update.chat_id is not None else current.chat_id),
+        )
+
+    if isinstance(current, EmailDestinationConfig) and isinstance(
+        update, EmailDestinationConfigUpdate
+    ):
+        return EmailDestinationConfig(
+            host=(update.host if update.host is not None else current.host),
+            port=(update.port if update.port is not None else current.port),
+            username=(
+                update.username
+                if "username" in update.model_fields_set
+                else current.username
+            ),
+            password=(
+                update.password
+                if "password" in update.model_fields_set
+                else current.password
+            ),
+            from_email=(
+                str(update.from_email)
+                if update.from_email is not None
+                else current.from_email
+            ),
+            to_email=(
+                str(update.to_email)
+                if update.to_email is not None
+                else current.to_email
+            ),
+            security=(
+                update.security if update.security is not None else current.security
+            ),
         )
 
     raise ValueError("Destination config type does not match destination type")

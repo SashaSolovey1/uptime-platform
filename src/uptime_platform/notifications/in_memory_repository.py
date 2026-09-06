@@ -150,3 +150,17 @@ class InMemoryNotificationDeliveryRepository:
         self._deliveries[delivery.id] = delivery
 
         return True
+
+    async def release_lock(
+        self,
+        delivery_id: UUID,
+    ) -> None:
+        delivery = self._deliveries.get(delivery_id)
+
+        if delivery is None:
+            return
+
+        self._deliveries[delivery_id] = replace(
+            delivery,
+            locked_until=None,
+        )

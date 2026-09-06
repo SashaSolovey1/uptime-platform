@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 import httpx2
 from sqlalchemy.ext.asyncio import (
@@ -53,6 +54,36 @@ class NotificationWorker:
         self._semaphore = asyncio.Semaphore(concurrency)
 
         self._notification_service = NotificationService()
+
+    async def _release_delivery_lock(
+        self,
+        delivery_id: UUID,
+    ) -> None:
+        async with (
+            self._session_factory() as session,
+            session.begin(),
+        ):
+            repository = SqlAlchemyNotificationDeliveryRepository(session)
+
+            await repository.release_lock(delivery_id)
+
+    async def _release_delivery_lock(
+        self,
+        delivery: NotificationDelivery,
+    ) -> None:
+        if delivery.locked_until is None:
+            return
+
+        async with (
+            self._session_factory() as session,
+            session.begin(),
+        ):
+            repository = SqlAlchemyNotificationDeliveryRepository(session)
+
+            await repository.release_lock(
+                delivery_id=delivery.id,
+                locked_until=delivery.locked_until,
+            )
 
     async def run_forever(self) -> None:
         while True:
@@ -118,6 +149,14 @@ class NotificationWorker:
                 "notification delivery failed delivery_id=%s",
                 delivery.id,
             )
+
+            try:
+                await self._release_delivery_lock(delivery)
+            except Exception:
+                logger.exception(
+                    "failed to release notification delivery lock delivery_id=%s",
+                    delivery.id,
+                )
 
     async def _process_delivery(
         self,

@@ -7,6 +7,13 @@ from uuid import UUID
 class NotificationDestinationType(StrEnum):
     WEBHOOK = "webhook"
     TELEGRAM = "telegram"
+    EMAIL = "email"
+
+
+class EmailSecurity(StrEnum):
+    NONE = "none"
+    STARTTLS = "starttls"
+    TLS = "tls"
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,8 +28,19 @@ class TelegramDestinationConfig:
     chat_id: str
 
 
+@dataclass(frozen=True, slots=True)
+class EmailDestinationConfig:
+    host: str
+    port: int
+    username: str | None
+    password: str | None
+    from_email: str
+    to_email: str
+    security: EmailSecurity
+
+
 type NotificationDestinationConfig = (
-    WebhookDestinationConfig | TelegramDestinationConfig
+    WebhookDestinationConfig | TelegramDestinationConfig | EmailDestinationConfig
 )
 
 

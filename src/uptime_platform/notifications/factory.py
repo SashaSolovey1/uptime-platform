@@ -1,6 +1,10 @@
 import httpx2
 
+from uptime_platform.notifications.email import (
+    EmailNotificationChannel,
+)
 from uptime_platform.notifications.entities import (
+    EmailDestinationConfig,
     NotificationDestination,
     NotificationDestinationType,
     TelegramDestinationConfig,
@@ -47,6 +51,24 @@ def create_notification_channel(
             client=client,
             bot_token=destination.config.bot_token,
             chat_id=destination.config.chat_id,
+            timeout_seconds=timeout_seconds,
+        )
+
+    if destination.destination_type is NotificationDestinationType.EMAIL:
+        if not isinstance(
+            destination.config,
+            EmailDestinationConfig,
+        ):
+            raise TypeError("Email destination has invalid config")
+
+        return EmailNotificationChannel(
+            host=destination.config.host,
+            port=destination.config.port,
+            username=destination.config.username,
+            password=destination.config.password,
+            from_email=destination.config.from_email,
+            to_email=destination.config.to_email,
+            security=destination.config.security,
             timeout_seconds=timeout_seconds,
         )
 

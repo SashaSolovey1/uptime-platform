@@ -66,3 +66,8 @@ class NotificationDeliveryRepositoryProtocol(Protocol):
         self,
         delivery: NotificationDelivery,
     ) -> bool: ...
+
+    async def release_lock(
+        self,
+        delivery_id: UUID,
+    ) -> None: ...

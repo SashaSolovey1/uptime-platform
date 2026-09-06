@@ -1,11 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uptime_platform.notifications.entities import (
+    EmailDestinationConfig,
+    EmailSecurity,
     NotificationDelivery,
     NotificationDestination,
     NotificationDestinationConfig,
@@ -139,6 +141,17 @@ class SqlAlchemyNotificationDestinationRepository:
                 chat_id=model.config["chat_id"],
             )
 
+        elif model.destination_type is NotificationDestinationType.EMAIL:
+            config = EmailDestinationConfig(
+                host=model.config["host"],
+                port=model.config["port"],
+                username=model.config.get("username"),
+                password=model.config.get("password"),
+                from_email=model.config["from_email"],
+                to_email=model.config["to_email"],
+                security=EmailSecurity(model.config["security"]),
+            )
+
         else:
             raise ValueError(
                 f"Unsupported notification destination type: {model.destination_type}"
@@ -156,7 +169,7 @@ class SqlAlchemyNotificationDestinationRepository:
     @staticmethod
     def _config_to_dict(
         config: NotificationDestinationConfig,
-    ) -> dict[str, str]:
+    ) -> dict[str, str | int | None]:
         if isinstance(
             config,
             WebhookDestinationConfig,
@@ -173,6 +186,20 @@ class SqlAlchemyNotificationDestinationRepository:
             return {
                 "bot_token": config.bot_token,
                 "chat_id": config.chat_id,
+            }
+
+        if isinstance(
+            config,
+            EmailDestinationConfig,
+        ):
+            return {
+                "host": config.host,
+                "port": config.port,
+                "username": config.username,
+                "password": config.password,
+                "from_email": config.from_email,
+                "to_email": config.to_email,
+                "security": config.security.value,
             }
 
         raise TypeError(f"Unsupported destination config: {type(config)}")
@@ -307,6 +334,29 @@ class SqlAlchemyNotificationDeliveryRepository:
         created_id = result.scalar_one_or_none()
 
         return created_id is not None
+
+    async def release_lock(
+        self,
+        delivery_id: UUID,
+        locked_until: datetime,
+    ) -> bool:
+        statement = (
+            update(NotificationDeliveryModel)
+            .where(
+                NotificationDeliveryModel.id == delivery_id,
+                NotificationDeliveryModel.locked_until == locked_until,
+            )
+            .values(
+                locked_until=None,
+            )
+            .returning(NotificationDeliveryModel.id)
+        )
+
+        result = await self._session.execute(statement)
+
+        released_id = result.scalar_one_or_none()
+
+        return released_id is not None
 
     @staticmethod
     def _to_entity(

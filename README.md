@@ -13,9 +13,10 @@ Self-hosted uptime monitoring, incident management, and public status pages buil
 - Maintenance windows
 - Public status pages
 - Uptime statistics with 24h, 7d, 30d, and custom time ranges
-- Webhook and Telegram notification destinations
+- Webhook, Telegram, and email notification destinations
 - Reliable notification delivery with retries
 - HMAC-SHA256 signed webhook requests
+- SMTP email delivery with TLS and STARTTLS support
 - PostgreSQL persistence with Alembic migrations
 - Docker Compose deployment
 - Unit, API, and PostgreSQL integration tests
@@ -73,6 +74,8 @@ Statistics include uptime percentage, check counts, and average response time.
 
 Notification destinations are configured through the API.
 
+Notifications are sent when incidents are opened or resolved.
+
 ### Webhook
 
 ```bash
@@ -111,9 +114,37 @@ curl -X POST \
   }'
 ```
 
-Telegram notifications are sent when incidents are opened or resolved.
+### Email
 
-Sensitive destination credentials are not returned by the API.
+Email notifications are delivered through an SMTP server.
+
+```bash
+curl -X POST \
+  http://127.0.0.1:8000/api/v1/notification-destinations \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Production email",
+    "destination_type": "email",
+    "enabled": true,
+    "config": {
+      "host": "smtp.example.com",
+      "port": 587,
+      "username": "uptime@example.com",
+      "password": "change-this-password",
+      "from_email": "uptime@example.com",
+      "to_email": "admin@example.com",
+      "security": "starttls"
+    }
+  }'
+```
+
+Supported SMTP security modes:
+
+- `none`
+- `starttls`
+- `tls`
+
+Sensitive destination credentials such as webhook secrets, Telegram bot tokens, and SMTP passwords are not returned by the API.
 
 ## Development
 
@@ -170,6 +201,12 @@ Start the full stack:
 make docker-up
 ```
 
+Rebuild the application containers while preserving the database:
+
+```bash
+make docker-rebuild
+```
+
 Show container status:
 
 ```bash
@@ -200,11 +237,10 @@ make docker-reset
 
 ## Tech Stack
 
-Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · Docker Compose · pytest · Ruff · uv
+Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · httpx2 · aiosmtplib · Docker Compose · pytest · Ruff · uv
 
 ## Planned
 
-- Email notifications
 - TCP, DNS, and TLS certificate monitoring
 - Organizations, RBAC, and API keys
 - Prometheus metrics and Grafana dashboards
@@ -217,6 +253,12 @@ The image is available on Docker Hub:
 
 ```bash
 docker pull sashastudent/uptime-platform:latest
+```
+
+Versioned images are also available:
+
+```bash
+docker pull sashastudent/uptime-platform:0.5.0
 ```
 
 ## License
