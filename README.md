@@ -13,8 +13,9 @@ Self-hosted uptime monitoring, incident management, and public status pages buil
 - Maintenance windows
 - Public status pages
 - Uptime statistics with 24h, 7d, 30d, and custom time ranges
-- Multiple webhook notification destinations
-- Reliable notification delivery with retries and HMAC-SHA256 signatures
+- Webhook and Telegram notification destinations
+- Reliable notification delivery with retries
+- HMAC-SHA256 signed webhook requests
 - PostgreSQL persistence with Alembic migrations
 - Docker Compose deployment
 - Unit, API, and PostgreSQL integration tests
@@ -37,7 +38,7 @@ cp .env.example .env
 Start the platform:
 
 ```bash
-docker compose up -d
+make docker-up
 ```
 
 API documentation:
@@ -70,7 +71,9 @@ Statistics include uptime percentage, check counts, and average response time.
 
 ## Notification Destinations
 
-Webhook destinations are configured through the API.
+Notification destinations are configured through the API.
+
+### Webhook
 
 ```bash
 curl -X POST \
@@ -80,12 +83,37 @@ curl -X POST \
     "name": "Production webhook",
     "destination_type": "webhook",
     "enabled": true,
-    "webhook_url": "https://example.com/webhook",
-    "webhook_secret": "change-this-secret"
+    "config": {
+      "url": "https://example.com/webhook",
+      "secret": "change-this-secret"
+    }
   }'
 ```
 
 Webhook requests are signed with HMAC-SHA256 and include event ID, timestamp, and signature headers.
+
+### Telegram
+
+Create a bot with BotFather and obtain its bot token and target chat ID.
+
+```bash
+curl -X POST \
+  http://127.0.0.1:8000/api/v1/notification-destinations \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Production Telegram",
+    "destination_type": "telegram",
+    "enabled": true,
+    "config": {
+      "bot_token": "your-bot-token",
+      "chat_id": "your-chat-id"
+    }
+  }'
+```
+
+Telegram notifications are sent when incidents are opened or resolved.
+
+Sensitive destination credentials are not returned by the API.
 
 ## Development
 
@@ -128,13 +156,55 @@ make lint
 make test-fresh
 ```
 
+### Docker
+
+Build the application image:
+
+```bash
+make docker-build
+```
+
+Start the full stack:
+
+```bash
+make docker-up
+```
+
+Show container status:
+
+```bash
+make docker-ps
+```
+
+Follow service logs:
+
+```bash
+make logs-api
+make logs-scheduler
+make logs-notification-worker
+```
+
+Stop and remove containers:
+
+```bash
+make docker-down
+```
+
+Rebuild the application from a clean database:
+
+```bash
+make docker-reset
+```
+
+> `make docker-reset` removes Docker volumes and deletes local PostgreSQL data.
+
 ## Tech Stack
 
 Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · Docker Compose · pytest · Ruff · uv
 
 ## Planned
 
-- Telegram and email notifications
+- Email notifications
 - TCP, DNS, and TLS certificate monitoring
 - Organizations, RBAC, and API keys
 - Prometheus metrics and Grafana dashboards
@@ -143,7 +213,7 @@ Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pyda
 
 ## Docker
 
-The official image is available on Docker Hub:
+The image is available on Docker Hub:
 
 ```bash
 docker pull sashastudent/uptime-platform:latest

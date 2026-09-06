@@ -30,7 +30,7 @@ async def main() -> None:
         worker = NotificationWorker(
             session_factory=SessionFactory,
             http_client=client,
-            webhook_timeout_seconds=(settings.webhook_timeout_seconds),
+            notification_timeout_seconds=(settings.notification_timeout_seconds),
         )
 
         await worker.run_forever()

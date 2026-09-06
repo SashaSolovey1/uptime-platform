@@ -9,11 +9,20 @@
 	test-unit \
 	test-api \
 	test-integration \
-	test-fresh
-	lint
-	format
-	scheduler
-	notification-worker
+	test-fresh \
+	format \
+	lint \
+	scheduler \
+	notification-worker \
+	docker-build \
+	docker-up \
+	docker-down \
+	docker-reset \
+	docker-ps \
+	logs-api \
+	logs-scheduler \
+	logs-notification-worker
+	docker-rebuild \
 
 
 dev-up:
@@ -25,7 +34,7 @@ dev-down:
 
 
 migrate:
-	uv run alembic upgrade head
+	set -a; . ./.env; set +a; uv run alembic upgrade head
 
 
 test-db-up:
@@ -60,6 +69,7 @@ test-fresh:
 	docker compose --profile test rm -sf postgres-test
 	$(MAKE) test
 
+
 format:
 	uv run ruff format .
 	uv run ruff check --fix .
@@ -69,8 +79,54 @@ lint:
 	uv run ruff format --check .
 	uv run ruff check .
 
+
 scheduler:
 	uv run python -m uptime_platform.scheduler.main
 
+
 notification-worker:
 	uv run python -m uptime_platform.notifications.main
+
+
+docker-build:
+	set -a; . ./.env; set +a; \
+	docker build \
+		--no-cache \
+		-t "$$APP_IMAGE" \
+		.
+
+
+docker-up:
+	docker compose up -d
+
+
+docker-down:
+	docker compose down --remove-orphans
+
+
+docker-reset:
+	docker compose down -v --remove-orphans
+	$(MAKE) docker-build
+	docker compose up -d --wait postgres
+	$(MAKE) migrate
+	docker compose up -d
+
+
+docker-ps:
+	docker compose ps
+
+
+logs-api:
+	docker compose logs -f api
+
+
+logs-scheduler:
+	docker compose logs -f scheduler
+
+
+logs-notification-worker:
+	docker compose logs -f notification-worker
+
+docker-rebuild:
+	$(MAKE) docker-build
+	docker compose up -d --force-recreate

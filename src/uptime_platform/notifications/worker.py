@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import UTC, datetime, timedelta
 
 import httpx2
 from sqlalchemy.ext.asyncio import (
@@ -38,7 +39,7 @@ class NotificationWorker:
         concurrency: int = 10,
         max_attempts: int = 5,
         lease_seconds: int = 60,
-        webhook_timeout_seconds: float = 5,
+        notification_timeout_seconds: float = 5,
     ) -> None:
         self._session_factory = session_factory
         self._http_client = http_client
@@ -47,7 +48,7 @@ class NotificationWorker:
         self._batch_size = batch_size
         self._max_attempts = max_attempts
         self._lease_seconds = lease_seconds
-        self._webhook_timeout_seconds = webhook_timeout_seconds
+        self._notification_timeout_seconds = notification_timeout_seconds
 
         self._semaphore = asyncio.Semaphore(concurrency)
 
@@ -90,13 +91,20 @@ class NotificationWorker:
     async def _claim_deliveries(
         self,
     ) -> list[NotificationDelivery]:
+        now = datetime.now(UTC)
 
-        async with self._session_factory() as session, session.begin():
+        locked_until = now + timedelta(seconds=self._lease_seconds)
+
+        async with self._session_factory() as session:
             repository = SqlAlchemyNotificationDeliveryRepository(session)
 
-            return await repository.claim_pending(
-                limit=self._batch_size,
-            )
+            async with session.begin():
+                return await repository.claim_pending(
+                    limit=self._batch_size,
+                    max_attempts=self._max_attempts,
+                    now=now,
+                    locked_until=locked_until,
+                )
 
     async def _process_delivery_safely(
         self,
@@ -142,8 +150,8 @@ class NotificationWorker:
 
             channel = create_notification_channel(
                 destination=destination,
-                http_client=self._http_client,
-                webhook_timeout_seconds=(self._webhook_timeout_seconds),
+                client=self._http_client,
+                timeout_seconds=self._notification_timeout_seconds,
             )
 
             updated_delivery = await self._notification_service.process(

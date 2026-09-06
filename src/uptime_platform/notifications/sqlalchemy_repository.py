@@ -8,6 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uptime_platform.notifications.entities import (
     NotificationDelivery,
     NotificationDestination,
+    NotificationDestinationConfig,
+    NotificationDestinationType,
+    TelegramDestinationConfig,
+    WebhookDestinationConfig,
 )
 from uptime_platform.notifications.models import (
     NotificationDeliveryModel,
@@ -31,8 +35,7 @@ class SqlAlchemyNotificationDestinationRepository:
             name=destination.name,
             destination_type=destination.destination_type,
             enabled=destination.enabled,
-            webhook_url=destination.webhook_url,
-            webhook_secret=destination.webhook_secret,
+            config=self._config_to_dict(destination.config),
             created_at=destination.created_at,
         )
 
@@ -83,8 +86,7 @@ class SqlAlchemyNotificationDestinationRepository:
         model.name = destination.name
         model.destination_type = destination.destination_type
         model.enabled = destination.enabled
-        model.webhook_url = destination.webhook_url
-        model.webhook_secret = destination.webhook_secret
+        model.config = self._config_to_dict(destination.config)
 
         await self._session.flush()
         await self._session.refresh(model)
@@ -104,7 +106,6 @@ class SqlAlchemyNotificationDestinationRepository:
             return False
 
         await self._session.delete(model)
-
         await self._session.flush()
 
         return True
@@ -126,15 +127,55 @@ class SqlAlchemyNotificationDestinationRepository:
     def _to_entity(
         model: NotificationDestinationModel,
     ) -> NotificationDestination:
+        if model.destination_type is NotificationDestinationType.WEBHOOK:
+            config = WebhookDestinationConfig(
+                url=model.config["url"],
+                secret=model.config["secret"],
+            )
+
+        elif model.destination_type is NotificationDestinationType.TELEGRAM:
+            config = TelegramDestinationConfig(
+                bot_token=model.config["bot_token"],
+                chat_id=model.config["chat_id"],
+            )
+
+        else:
+            raise ValueError(
+                f"Unsupported notification destination type: {model.destination_type}"
+            )
+
         return NotificationDestination(
             id=model.id,
             name=model.name,
             destination_type=model.destination_type,
             enabled=model.enabled,
-            webhook_url=model.webhook_url,
-            webhook_secret=model.webhook_secret,
+            config=config,
             created_at=model.created_at,
         )
+
+    @staticmethod
+    def _config_to_dict(
+        config: NotificationDestinationConfig,
+    ) -> dict[str, str]:
+        if isinstance(
+            config,
+            WebhookDestinationConfig,
+        ):
+            return {
+                "url": config.url,
+                "secret": config.secret,
+            }
+
+        if isinstance(
+            config,
+            TelegramDestinationConfig,
+        ):
+            return {
+                "bot_token": config.bot_token,
+                "chat_id": config.chat_id,
+            }
+
+        raise TypeError(f"Unsupported destination config: {type(config)}")
 
 
 class SqlAlchemyNotificationDeliveryRepository:

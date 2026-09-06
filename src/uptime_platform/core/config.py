@@ -10,7 +10,7 @@ from pydantic_settings import (
 class Settings(BaseSettings):
     database_url: str
 
-    webhook_timeout_seconds: float = Field(
+    notification_timeout_seconds: float = Field(
         default=5.0,
         gt=0,
         le=60,

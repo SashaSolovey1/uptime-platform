@@ -4,6 +4,9 @@ from uuid import UUID, uuid4
 
 from uptime_platform.notifications.entities import (
     NotificationDestination,
+    NotificationDestinationConfig,
+    TelegramDestinationConfig,
+    WebhookDestinationConfig,
 )
 from uptime_platform.notifications.repository_protocols import (
     NotificationDestinationRepositoryProtocol,
@@ -11,7 +14,68 @@ from uptime_platform.notifications.repository_protocols import (
 from uptime_platform.notifications.schemas import (
     NotificationDestinationCreate,
     NotificationDestinationUpdate,
+    TelegramDestinationConfigCreate,
+    TelegramDestinationConfigUpdate,
+    WebhookDestinationConfigCreate,
+    WebhookDestinationConfigUpdate,
 )
+
+
+def _create_config(
+    config: (WebhookDestinationConfigCreate | TelegramDestinationConfigCreate),
+) -> NotificationDestinationConfig:
+    if isinstance(
+        config,
+        WebhookDestinationConfigCreate,
+    ):
+        return WebhookDestinationConfig(
+            url=str(config.url),
+            secret=config.secret,
+        )
+
+    if isinstance(
+        config,
+        TelegramDestinationConfigCreate,
+    ):
+        return TelegramDestinationConfig(
+            bot_token=config.bot_token,
+            chat_id=config.chat_id,
+        )
+
+    raise TypeError(f"Unsupported destination config: {type(config)}")
+
+
+def _update_config(
+    current: NotificationDestinationConfig,
+    update: (WebhookDestinationConfigUpdate | TelegramDestinationConfigUpdate),
+) -> NotificationDestinationConfig:
+    if isinstance(
+        current,
+        WebhookDestinationConfig,
+    ) and isinstance(
+        update,
+        WebhookDestinationConfigUpdate,
+    ):
+        return WebhookDestinationConfig(
+            url=(str(update.url) if update.url is not None else current.url),
+            secret=(update.secret if update.secret is not None else current.secret),
+        )
+
+    if isinstance(
+        current,
+        TelegramDestinationConfig,
+    ) and isinstance(
+        update,
+        TelegramDestinationConfigUpdate,
+    ):
+        return TelegramDestinationConfig(
+            bot_token=(
+                update.bot_token if update.bot_token is not None else current.bot_token
+            ),
+            chat_id=(update.chat_id if update.chat_id is not None else current.chat_id),
+        )
+
+    raise ValueError("Destination config type does not match destination type")
 
 
 class NotificationDestinationService:
@@ -30,8 +94,7 @@ class NotificationDestinationService:
             name=data.name,
             destination_type=data.destination_type,
             enabled=data.enabled,
-            webhook_url=str(data.webhook_url),
-            webhook_secret=data.webhook_secret,
+            config=_create_config(data.config),
             created_at=datetime.now(UTC),
         )
 
@@ -58,14 +121,19 @@ class NotificationDestinationService:
         if destination is None:
             return None
 
-        changes = data.model_dump(
-            exclude_unset=True,
-            mode="json",
-        )
+        config = destination.config
+
+        if data.config is not None:
+            config = _update_config(
+                current=destination.config,
+                update=data.config,
+            )
 
         updated_destination = replace(
             destination,
-            **changes,
+            name=(data.name if data.name is not None else destination.name),
+            enabled=(data.enabled if data.enabled is not None else destination.enabled),
+            config=config,
         )
 
         return await self._repository.update(updated_destination)

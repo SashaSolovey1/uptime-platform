@@ -50,8 +50,10 @@ async def test_create_notification_destination(
             "name": "Production webhook",
             "destination_type": "webhook",
             "enabled": True,
-            "webhook_url": "https://example.com/webhook",
-            "webhook_secret": "very-secret-key-123",
+            "config": {
+                "url": "https://example.com/webhook",
+                "secret": "very-secret-key-123",
+            },
         },
     )
 
@@ -62,9 +64,9 @@ async def test_create_notification_destination(
     assert data["name"] == "Production webhook"
     assert data["destination_type"] == "webhook"
     assert data["enabled"] is True
-    assert data["webhook_url"] == "https://example.com/webhook"
 
-    assert "webhook_secret" not in data
+    assert data["config"]["url"] == "https://example.com/webhook"
+    assert "secret" not in data["config"]
 
 
 async def test_list_notification_destinations(
@@ -75,8 +77,10 @@ async def test_list_notification_destinations(
         json={
             "name": "Production webhook",
             "destination_type": "webhook",
-            "webhook_url": "https://example.com/webhook",
-            "webhook_secret": "very-secret-key-123",
+            "config": {
+                "url": "https://example.com/webhook",
+                "secret": "very-secret-key-123",
+            },
         },
     )
 
@@ -88,7 +92,8 @@ async def test_list_notification_destinations(
 
     assert len(data) == 1
     assert data[0]["name"] == "Production webhook"
-    assert "webhook_secret" not in data
+    assert data[0]["config"]["url"] == "https://example.com/webhook"
+    assert "secret" not in data[0]["config"]
 
 
 async def test_update_notification_destination(
@@ -99,8 +104,10 @@ async def test_update_notification_destination(
         json={
             "name": "Production webhook",
             "destination_type": "webhook",
-            "webhook_url": "https://example.com/webhook",
-            "webhook_secret": "very-secret-key-123",
+            "config": {
+                "url": "https://example.com/webhook",
+                "secret": "very-secret-key-123",
+            },
         },
     )
 
@@ -130,8 +137,10 @@ async def test_delete_notification_destination(
         json={
             "name": "Production webhook",
             "destination_type": "webhook",
-            "webhook_url": "https://example.com/webhook",
-            "webhook_secret": "very-secret-key-123",
+            "config": {
+                "url": "https://example.com/webhook",
+                "secret": "very-secret-key-123",
+            },
         },
     )
 
@@ -146,3 +155,32 @@ async def test_delete_notification_destination(
     response = await client.get(f"/api/v1/notification-destinations/{destination_id}")
 
     assert response.status_code == 404
+
+
+async def test_create_telegram_destination(
+    client: httpx2.AsyncClient,
+) -> None:
+    response = await client.post(
+        "/api/v1/notification-destinations",
+        json={
+            "name": "Production Telegram",
+            "destination_type": "telegram",
+            "enabled": True,
+            "config": {
+                "bot_token": ("123456789:test-bot-token"),
+                "chat_id": "-1001234567890",
+            },
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["name"] == "Production Telegram"
+    assert data["destination_type"] == "telegram"
+    assert data["enabled"] is True
+
+    assert data["config"]["chat_id"] == "-1001234567890"
+
+    assert "bot_token" not in data["config"]

@@ -6,6 +6,24 @@ from uuid import UUID
 
 class NotificationDestinationType(StrEnum):
     WEBHOOK = "webhook"
+    TELEGRAM = "telegram"
+
+
+@dataclass(frozen=True, slots=True)
+class WebhookDestinationConfig:
+    url: str
+    secret: str
+
+
+@dataclass(frozen=True, slots=True)
+class TelegramDestinationConfig:
+    bot_token: str
+    chat_id: str
+
+
+type NotificationDestinationConfig = (
+    WebhookDestinationConfig | TelegramDestinationConfig
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,8 +32,7 @@ class NotificationDestination:
     name: str
     destination_type: NotificationDestinationType
     enabled: bool
-    webhook_url: str
-    webhook_secret: str
+    config: NotificationDestinationConfig
     created_at: datetime
 
 

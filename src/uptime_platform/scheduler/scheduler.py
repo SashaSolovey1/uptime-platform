@@ -98,14 +98,16 @@ class Scheduler:
 
                     outbox_repository = SqlAlchemyOutboxRepository(session)
 
-                    maintenance = SqlAlchemyMaintenanceWindowRepository(session)
+                    maintenance_repository = SqlAlchemyMaintenanceWindowRepository(
+                        session
+                    )
 
                     service = CheckService(
                         monitor_repository=monitor_repository,
                         check_repository=check_repository,
                         incident_repository=incident_repository,
                         outbox_repository=outbox_repository,
-                        maintenance=maintenance,
+                        maintenance_repository=maintenance_repository,
                         checker=self._checker,
                     )
 

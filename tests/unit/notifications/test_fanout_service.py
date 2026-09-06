@@ -6,6 +6,7 @@ import pytest
 from uptime_platform.notifications.entities import (
     NotificationDestination,
     NotificationDestinationType,
+    WebhookDestinationConfig,
 )
 from uptime_platform.notifications.in_memory_repository import (
     InMemoryNotificationDeliveryRepository,
@@ -32,10 +33,12 @@ def make_destination(
     return NotificationDestination(
         id=uuid4(),
         name="Test webhook",
-        destination_type=(NotificationDestinationType.WEBHOOK),
+        destination_type=NotificationDestinationType.WEBHOOK,
         enabled=enabled,
-        webhook_url="https://example.com/webhook",
-        webhook_secret="test-secret",
+        config=WebhookDestinationConfig(
+            url="https://example.com/webhook",
+            secret="test-secret",
+        ),
         created_at=datetime.now(UTC),
     )
 

@@ -1,20 +1,18 @@
 from datetime import datetime
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
     Integer,
     String,
-    Text,
     UniqueConstraint,
     Uuid,
 )
-from sqlalchemy import (
-    Enum as SqlEnum,
-)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from uptime_platform.db.base import Base
@@ -29,7 +27,6 @@ class NotificationDestinationModel(Base):
     id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
         primary_key=True,
-        default=uuid4,
     )
 
     name: Mapped[str] = mapped_column(
@@ -38,10 +35,10 @@ class NotificationDestinationModel(Base):
     )
 
     destination_type: Mapped[NotificationDestinationType] = mapped_column(
-        SqlEnum(
+        Enum(
             NotificationDestinationType,
             name="notification_destination_type",
-            values_callable=lambda enum_class: [item.value for item in enum_class],
+            values_callable=lambda enum_class: [member.value for member in enum_class],
         ),
         nullable=False,
     )
@@ -52,13 +49,8 @@ class NotificationDestinationModel(Base):
         default=True,
     )
 
-    webhook_url: Mapped[str] = mapped_column(
-        String(2048),
-        nullable=False,
-    )
-
-    webhook_secret: Mapped[str] = mapped_column(
-        Text,
+    config: Mapped[dict[str, str]] = mapped_column(
+        JSONB,
         nullable=False,
     )
 
