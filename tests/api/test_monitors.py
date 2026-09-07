@@ -32,7 +32,10 @@ def test_create_monitor(client: TestClient) -> None:
         "/api/v1/monitors",
         json={
             "name": "Production API",
-            "url": "https://example.com/health",
+            "monitor_type": "http",
+            "config": {
+                "url": "https://example.com/health",
+            },
             "interval_seconds": 30,
             "timeout_seconds": 5,
         },
@@ -43,7 +46,11 @@ def test_create_monitor(client: TestClient) -> None:
     data = response.json()
 
     assert data["name"] == "Production API"
-    assert data["url"] == "https://example.com/health"
+    assert data["monitor_type"] == "http"
+
+    assert data["config"] == {
+        "url": "https://example.com/health",
+    }
     assert data["interval_seconds"] == 30
     assert data["timeout_seconds"] == 5
     assert data["status"] == "pending"
@@ -56,7 +63,10 @@ def test_get_monitor(client: TestClient) -> None:
         "/api/v1/monitors",
         json={
             "name": "Production API",
-            "url": "https://example.com/health",
+            "monitor_type": "http",
+            "config": {
+                "url": "https://example.com/health",
+            },
         },
     )
 
@@ -103,7 +113,10 @@ def test_delete_monitor(client: TestClient) -> None:
         "/api/v1/monitors",
         json={
             "name": "Production API",
-            "url": "https://example.com/health",
+            "monitor_type": "http",
+            "config": {
+                "url": "https://example.com/health",
+            },
         },
     )
 
@@ -125,7 +138,10 @@ def test_update_monitor(
         "/api/v1/monitors",
         json={
             "name": "Production API",
-            "url": "https://example.com/health",
+            "monitor_type": "http",
+            "config": {
+                "url": "https://example.com/health",
+            },
             "interval_seconds": 30,
             "timeout_seconds": 5,
         },

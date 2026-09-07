@@ -792,7 +792,7 @@ wheels = [
 
 [[package]]
 name = "uptime-platform"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiosmtplib" },

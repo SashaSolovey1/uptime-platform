@@ -1,21 +1,30 @@
 from datetime import datetime
 from uuid import UUID
 
-from uptime_platform.monitors.entities import Monitor, MonitorStatus
+from uptime_platform.monitors.entities import (
+    Monitor,
+    MonitorStatus,
+)
 
 
 class InMemoryMonitorRepository:
     def __init__(self) -> None:
-        self._monitors: dict[UUID, Monitor] = {}
+        self._monitors: dict[
+            UUID,
+            Monitor,
+        ] = {}
 
     async def create(
         self,
         monitor: Monitor,
     ) -> Monitor:
         self._monitors[monitor.id] = monitor
+
         return monitor
 
-    async def get_all(self) -> list[Monitor]:
+    async def get_all(
+        self,
+    ) -> list[Monitor]:
         return list(self._monitors.values())
 
     async def get_by_id(
@@ -23,6 +32,12 @@ class InMemoryMonitorRepository:
         monitor_id: UUID,
     ) -> Monitor | None:
         return self._monitors.get(monitor_id)
+
+    async def get_by_id_for_update(
+        self,
+        monitor_id: UUID,
+    ) -> Monitor | None:
+        return await self.get_by_id(monitor_id)
 
     async def update(
         self,
@@ -32,6 +47,7 @@ class InMemoryMonitorRepository:
             return None
 
         self._monitors[monitor.id] = monitor
+
         return monitor
 
     async def delete(
@@ -42,6 +58,7 @@ class InMemoryMonitorRepository:
             return False
 
         del self._monitors[monitor_id]
+
         return True
 
     async def get_due(

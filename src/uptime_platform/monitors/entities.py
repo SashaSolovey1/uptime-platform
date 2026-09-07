@@ -11,11 +11,33 @@ class MonitorStatus(StrEnum):
     PAUSED = "paused"
 
 
+class MonitorType(StrEnum):
+    HTTP = "http"
+    TCP = "tcp"
+
+
+@dataclass(frozen=True, slots=True)
+class HttpMonitorConfig:
+    url: str
+
+
+@dataclass(frozen=True, slots=True)
+class TcpMonitorConfig:
+    host: str
+    port: int
+
+
+type MonitorConfig = HttpMonitorConfig | TcpMonitorConfig
+
+
 @dataclass(frozen=True, slots=True)
 class Monitor:
     id: UUID
     name: str
-    url: str
+
+    monitor_type: MonitorType
+    config: MonitorConfig
+
     interval_seconds: int
     timeout_seconds: int
     status: MonitorStatus

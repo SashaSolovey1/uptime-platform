@@ -4,8 +4,17 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uptime_platform.monitors.entities import Monitor, MonitorStatus
-from uptime_platform.monitors.models import MonitorModel
+from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
+    Monitor,
+    MonitorConfig,
+    MonitorStatus,
+    MonitorType,
+    TcpMonitorConfig,
+)
+from uptime_platform.monitors.models import (
+    MonitorModel,
+)
 
 
 class SqlAlchemyMonitorRepository:
@@ -22,7 +31,8 @@ class SqlAlchemyMonitorRepository:
         model = MonitorModel(
             id=monitor.id,
             name=monitor.name,
-            url=monitor.url,
+            monitor_type=monitor.monitor_type,
+            config=self._config_to_dict(monitor.config),
             interval_seconds=monitor.interval_seconds,
             timeout_seconds=monitor.timeout_seconds,
             status=monitor.status,
@@ -41,7 +51,9 @@ class SqlAlchemyMonitorRepository:
 
         return self._to_entity(model)
 
-    async def get_all(self) -> list[Monitor]:
+    async def get_all(
+        self,
+    ) -> list[Monitor]:
         result = await self._session.execute(select(MonitorModel))
 
         models = result.scalars().all()
@@ -62,6 +74,26 @@ class SqlAlchemyMonitorRepository:
 
         return self._to_entity(model)
 
+    async def get_by_id_for_update(
+        self,
+        monitor_id: UUID,
+    ) -> Monitor | None:
+        statement = (
+            select(MonitorModel)
+            .where(MonitorModel.id == monitor_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        return self._to_entity(model)
+
     async def update(
         self,
         monitor: Monitor,
@@ -75,7 +107,8 @@ class SqlAlchemyMonitorRepository:
             return None
 
         model.name = monitor.name
-        model.url = monitor.url
+        model.monitor_type = monitor.monitor_type
+        model.config = self._config_to_dict(monitor.config)
         model.interval_seconds = monitor.interval_seconds
         model.timeout_seconds = monitor.timeout_seconds
         model.status = monitor.status
@@ -129,11 +162,51 @@ class SqlAlchemyMonitorRepository:
         return [self._to_entity(model) for model in models]
 
     @staticmethod
-    def _to_entity(model: MonitorModel) -> Monitor:
+    def _config_to_dict(
+        config: MonitorConfig,
+    ) -> dict[str, object]:
+        if isinstance(
+            config,
+            HttpMonitorConfig,
+        ):
+            return {
+                "url": config.url,
+            }
+
+        if isinstance(
+            config,
+            TcpMonitorConfig,
+        ):
+            return {
+                "host": config.host,
+                "port": config.port,
+            }
+
+        raise TypeError(f"Unsupported monitor config: {type(config)}")
+
+    @staticmethod
+    def _to_entity(
+        model: MonitorModel,
+    ) -> Monitor:
+        if model.monitor_type is MonitorType.HTTP:
+            config = HttpMonitorConfig(
+                url=str(model.config["url"]),
+            )
+
+        elif model.monitor_type is MonitorType.TCP:
+            config = TcpMonitorConfig(
+                host=str(model.config["host"]),
+                port=int(model.config["port"]),
+            )
+
+        else:
+            raise ValueError(f"Unsupported monitor type: {model.monitor_type}")
+
         return Monitor(
             id=model.id,
             name=model.name,
-            url=model.url,
+            monitor_type=model.monitor_type,
+            config=config,
             interval_seconds=model.interval_seconds,
             timeout_seconds=model.timeout_seconds,
             status=model.status,

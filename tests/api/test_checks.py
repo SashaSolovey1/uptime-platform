@@ -21,8 +21,10 @@ from uptime_platform.maintenance.in_memory_repository import (
     InMemoryMaintenanceWindowRepository,
 )
 from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
     Monitor,
     MonitorStatus,
+    MonitorType,
 )
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
@@ -34,10 +36,9 @@ from uptime_platform.outbox.in_memory_repository import (
 pytestmark = pytest.mark.anyio
 
 
-class StubHttpChecker:
+class StubChecker:
     async def check(
         self,
-        url: str,
         timeout_seconds: int,
     ) -> CheckResult:
         return CheckResult(
@@ -46,6 +47,20 @@ class StubHttpChecker:
             status_code=200,
             error=None,
         )
+
+
+class StubCheckerFactory:
+    def __init__(
+        self,
+        checker: StubChecker,
+    ) -> None:
+        self._checker = checker
+
+    def create(
+        self,
+        monitor: Monitor,
+    ) -> StubChecker:
+        return self._checker
 
 
 @pytest.fixture
@@ -82,13 +97,17 @@ async def client(
     maintenance_repository: InMemoryMaintenanceWindowRepository,
 ) -> AsyncIterator[httpx2.AsyncClient]:
     def override_check_service() -> CheckService:
+        checker = StubChecker()
+
+        checker_factory = StubCheckerFactory(checker)
+
         return CheckService(
             monitor_repository=monitor_repository,
             check_repository=check_repository,
             incident_repository=incident_repository,
             outbox_repository=outbox_repository,
             maintenance_repository=maintenance_repository,
-            checker=StubHttpChecker(),
+            checker_factory=checker_factory,
         )
 
     app.dependency_overrides[get_check_service] = override_check_service
@@ -112,7 +131,10 @@ async def create_monitor(
     monitor = Monitor(
         id=uuid4(),
         name="Test monitor",
-        url="https://example.com",
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfig(
+            url="https://example.com",
+        ),
         interval_seconds=60,
         timeout_seconds=5,
         status=MonitorStatus.PENDING,

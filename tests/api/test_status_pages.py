@@ -7,8 +7,10 @@ import pytest
 
 from uptime_platform.main import app
 from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
     Monitor,
     MonitorStatus,
+    MonitorType,
 )
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
@@ -35,7 +37,10 @@ def make_monitor(
     return Monitor(
         id=uuid4(),
         name=name,
-        url="https://example.com",
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfig(
+            url="https://example.com",
+        ),
         interval_seconds=60,
         timeout_seconds=5,
         status=status,

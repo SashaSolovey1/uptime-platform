@@ -7,7 +7,12 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
-from uptime_platform.checks.http import HttpChecker
+from uptime_platform.checks.factory import (
+    CheckerFactory,
+)
+from uptime_platform.checks.protocols import (
+    CheckerFactoryProtocol,
+)
 from uptime_platform.checks.service import CheckService
 from uptime_platform.checks.sqlalchemy_repository import (
     SqlAlchemyCheckRepository,
@@ -36,6 +41,7 @@ class Scheduler:
         poll_interval_seconds: int = 1,
         batch_size: int = 100,
         concurrency: int = 20,
+        checker_factory: CheckerFactoryProtocol | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._poll_interval_seconds = poll_interval_seconds
@@ -43,7 +49,9 @@ class Scheduler:
 
         self._semaphore = asyncio.Semaphore(concurrency)
 
-        self._checker = HttpChecker()
+        self._checker_factory = (
+            checker_factory if checker_factory is not None else CheckerFactory()
+        )
 
     async def run_forever(self) -> None:
         while True:
@@ -83,9 +91,10 @@ class Scheduler:
         monitor: Monitor,
     ) -> None:
         async with self._semaphore:
-            result = await self._checker.check(
-                url=monitor.url,
-                timeout_seconds=monitor.timeout_seconds,
+            checker = self._checker_factory.create(monitor)
+
+            result = await checker.check(
+                timeout_seconds=(monitor.timeout_seconds),
             )
 
             async with self._session_factory() as session:
@@ -103,12 +112,12 @@ class Scheduler:
                     )
 
                     service = CheckService(
-                        monitor_repository=monitor_repository,
-                        check_repository=check_repository,
-                        incident_repository=incident_repository,
-                        outbox_repository=outbox_repository,
-                        maintenance_repository=maintenance_repository,
-                        checker=self._checker,
+                        monitor_repository=(monitor_repository),
+                        check_repository=(check_repository),
+                        incident_repository=(incident_repository),
+                        outbox_repository=(outbox_repository),
+                        maintenance_repository=(maintenance_repository),
+                        checker_factory=(self._checker_factory),
                     )
 
                     await service.record(

@@ -2,8 +2,10 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
     Monitor,
     MonitorStatus,
+    MonitorType,
 )
 from uptime_platform.monitors.state import (
     apply_check_result,
@@ -11,7 +13,7 @@ from uptime_platform.monitors.state import (
 
 
 def make_monitor(
-    status: MonitorStatus,
+    status: MonitorStatus = MonitorStatus.PENDING,
     consecutive_failures: int = 0,
     consecutive_successes: int = 0,
 ) -> Monitor:
@@ -20,8 +22,11 @@ def make_monitor(
     return Monitor(
         id=uuid4(),
         name="Production API",
-        url="https://example.com",
-        interval_seconds=60,
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfig(
+            url="https://example.com/health",
+        ),
+        interval_seconds=30,
         timeout_seconds=5,
         status=status,
         created_at=now,

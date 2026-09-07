@@ -3,10 +3,12 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uptime_platform.checks.http import HttpChecker
+from uptime_platform.checks.factory import (
+    CheckerFactory,
+)
 from uptime_platform.checks.protocols import (
+    CheckerFactoryProtocol,
     CheckRepositoryProtocol,
-    HttpCheckerProtocol,
 )
 from uptime_platform.checks.service import CheckService
 from uptime_platform.checks.sqlalchemy_repository import (
@@ -35,8 +37,8 @@ from uptime_platform.outbox.protocols import (
 )
 
 
-def get_http_checker() -> HttpCheckerProtocol:
-    return HttpChecker()
+def get_checker_factory() -> CheckerFactoryProtocol:
+    return CheckerFactory()
 
 
 def get_check_repository(
@@ -69,9 +71,9 @@ def get_check_service(
         MaintenanceWindowRepositoryProtocol,
         Depends(get_maintenance_repository),
     ],
-    checker: Annotated[
-        HttpCheckerProtocol,
-        Depends(get_http_checker),
+    checker_factory: Annotated[
+        CheckerFactoryProtocol,
+        Depends(get_checker_factory),
     ],
 ) -> CheckService:
     return CheckService(
@@ -80,5 +82,5 @@ def get_check_service(
         incident_repository=incident_repository,
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
-        checker=checker,
+        checker_factory=checker_factory,
     )

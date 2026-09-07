@@ -5,14 +5,21 @@ from uptime_platform.checks.entities import (
     Check,
     CheckResult,
 )
+from uptime_platform.monitors.entities import Monitor
 
 
-class HttpCheckerProtocol(Protocol):
+class CheckerProtocol(Protocol):
     async def check(
         self,
-        url: str,
         timeout_seconds: int,
     ) -> CheckResult: ...
+
+
+class CheckerFactoryProtocol(Protocol):
+    def create(
+        self,
+        monitor: Monitor,
+    ) -> CheckerProtocol: ...
 
 
 class CheckRepositoryProtocol(Protocol):

@@ -11,7 +11,7 @@ from uptime_platform.checks.models import CheckModel
 from uptime_platform.checks.sqlalchemy_repository import (
     SqlAlchemyCheckRepository,
 )
-from uptime_platform.monitors.entities import MonitorStatus
+from uptime_platform.monitors.entities import MonitorStatus, MonitorType
 from uptime_platform.monitors.models import MonitorModel
 from uptime_platform.monitors.sqlalchemy_repository import (
     SqlAlchemyMonitorRepository,
@@ -30,7 +30,10 @@ async def test_check_and_monitor_update_can_be_rolled_back(
     model = MonitorModel(
         id=monitor_id,
         name="Production API",
-        url="https://example.com",
+        monitor_type=MonitorType.HTTP,
+        config={
+            "url": "https://example.com/health",
+        },
         interval_seconds=60,
         timeout_seconds=5,
         status=MonitorStatus.PENDING,

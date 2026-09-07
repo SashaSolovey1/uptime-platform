@@ -1,16 +1,17 @@
+import asyncio
 import time
-
-import httpx2
 
 from uptime_platform.checks.entities import CheckResult
 
 
-class HttpChecker:
+class TcpChecker:
     def __init__(
         self,
-        url: str,
+        host: str,
+        port: int,
     ) -> None:
-        self._url = url
+        self._host = host
+        self._port = port
 
     async def check(
         self,
@@ -18,23 +19,27 @@ class HttpChecker:
     ) -> CheckResult:
         started_at = time.perf_counter()
 
+        writer: asyncio.StreamWriter | None = None
+
         try:
-            async with httpx2.AsyncClient() as client:
-                response = await client.get(
-                    self._url,
-                    timeout=timeout_seconds,
+            async with asyncio.timeout(
+                timeout_seconds,
+            ):
+                _, writer = await asyncio.open_connection(
+                    host=self._host,
+                    port=self._port,
                 )
 
             response_time_ms = (time.perf_counter() - started_at) * 1000
 
             return CheckResult(
-                success=response.is_success,
+                success=True,
                 response_time_ms=response_time_ms,
-                status_code=response.status_code,
+                status_code=None,
                 error=None,
             )
 
-        except httpx2.HTTPError as exc:
+        except (TimeoutError, OSError) as exc:
             response_time_ms = (time.perf_counter() - started_at) * 1000
 
             return CheckResult(
@@ -43,3 +48,12 @@ class HttpChecker:
                 status_code=None,
                 error=str(exc),
             )
+
+        finally:
+            if writer is not None:
+                writer.close()
+
+                try:
+                    await writer.wait_closed()
+                except OSError:
+                    pass

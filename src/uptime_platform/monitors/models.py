@@ -3,10 +3,14 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, String, Uuid
 from sqlalchemy import Enum as SqlEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from uptime_platform.db.base import Base
-from uptime_platform.monitors.entities import MonitorStatus
+from uptime_platform.monitors.entities import (
+    MonitorStatus,
+    MonitorType,
+)
 
 
 class MonitorModel(Base):
@@ -23,8 +27,17 @@ class MonitorModel(Base):
         nullable=False,
     )
 
-    url: Mapped[str] = mapped_column(
-        String(2048),
+    monitor_type: Mapped[MonitorType] = mapped_column(
+        SqlEnum(
+            MonitorType,
+            name="monitor_type",
+            values_callable=lambda enum_class: [item.value for item in enum_class],
+        ),
+        nullable=False,
+    )
+
+    config: Mapped[dict[str, object]] = mapped_column(
+        JSONB,
         nullable=False,
     )
 
@@ -49,7 +62,9 @@ class MonitorModel(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
     )
 
     next_check_at: Mapped[datetime] = mapped_column(

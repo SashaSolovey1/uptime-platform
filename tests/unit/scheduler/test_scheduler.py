@@ -6,8 +6,10 @@ import pytest
 
 from uptime_platform.checks.service import CheckService
 from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
     Monitor,
     MonitorStatus,
+    MonitorType,
 )
 from uptime_platform.scheduler.scheduler import Scheduler
 
@@ -35,16 +37,21 @@ def fake_session_factory() -> FakeSession:
     return FakeSession()
 
 
-def make_monitor() -> Monitor:
+def make_monitor(
+    status: MonitorStatus = MonitorStatus.PENDING,
+) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
         name="Test monitor",
-        url="https://example.com",
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfig(
+            url="https://example.com",
+        ),
         interval_seconds=60,
         timeout_seconds=5,
-        status=MonitorStatus.PENDING,
+        status=status,
         created_at=now,
         next_check_at=now,
         failure_threshold=3,
@@ -59,13 +66,17 @@ async def test_scheduler_can_process_due_monitor(
 ) -> None:
     monitor = make_monitor()
 
-    scheduler = Scheduler(
-        session_factory=fake_session_factory,
+    checker = MagicMock()
+    checker.check = AsyncMock(
+        return_value=MagicMock(),
     )
 
-    scheduler._checker = MagicMock()
-    scheduler._checker.check = AsyncMock(
-        return_value=MagicMock(),
+    checker_factory = MagicMock()
+    checker_factory.create.return_value = checker
+
+    scheduler = Scheduler(
+        session_factory=fake_session_factory,
+        checker_factory=checker_factory,
     )
 
     monkeypatch.setattr(
@@ -86,12 +97,13 @@ async def test_scheduler_can_process_due_monitor(
 
     assert processed == 1
 
-    scheduler._checker.check.assert_awaited_once_with(
-        url=monitor.url,
+    checker_factory.create.assert_called_once_with(monitor)
+
+    checker.check.assert_awaited_once_with(
         timeout_seconds=monitor.timeout_seconds,
     )
 
     record_mock.assert_awaited_once_with(
         monitor_id=monitor.id,
-        result=scheduler._checker.check.return_value,
+        result=checker.check.return_value,
     )

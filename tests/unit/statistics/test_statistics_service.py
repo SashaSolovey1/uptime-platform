@@ -4,8 +4,10 @@ from uuid import UUID, uuid4
 import pytest
 
 from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
     Monitor,
     MonitorStatus,
+    MonitorType,
 )
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
@@ -49,16 +51,21 @@ class StubStatisticsRepository:
         )
 
 
-def make_monitor() -> Monitor:
+def make_monitor(
+    status: MonitorStatus = MonitorStatus.PENDING,
+) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
         name="API",
-        url="https://example.com",
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfig(
+            url="https://example.com",
+        ),
         interval_seconds=60,
         timeout_seconds=5,
-        status=MonitorStatus.UP,
+        status=status,
         created_at=now,
         next_check_at=now,
         failure_threshold=3,

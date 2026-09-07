@@ -33,3 +33,8 @@ class MonitorRepositoryProtocol(Protocol):
         now: datetime,
         limit: int,
     ) -> list[Monitor]: ...
+
+    async def get_by_id_for_update(
+        self,
+        monitor_id: UUID,
+    ) -> Monitor | None: ...

@@ -2,11 +2,20 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from uptime_platform.monitors.entities import MonitorStatus
-from uptime_platform.monitors.in_memory_repository import InMemoryMonitorRepository
+from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
+    MonitorStatus,
+    MonitorType,
+    TcpMonitorConfig,
+)
+from uptime_platform.monitors.in_memory_repository import (
+    InMemoryMonitorRepository,
+)
 from uptime_platform.monitors.schemas import (
+    HttpMonitorConfigCreate,
     MonitorCreate,
     MonitorUpdate,
+    TcpMonitorConfigCreate,
 )
 from uptime_platform.monitors.service import MonitorService
 
@@ -16,6 +25,7 @@ pytestmark = pytest.mark.anyio
 @pytest.fixture
 def service() -> MonitorService:
     repository = InMemoryMonitorRepository()
+
     return MonitorService(repository)
 
 
@@ -24,12 +34,15 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-async def test_create_monitor(
+async def test_create_http_monitor(
     service: MonitorService,
 ) -> None:
     data = MonitorCreate(
         name="Production API",
-        url="https://example.com/health",
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfigCreate(
+            url="https://example.com/health",
+        ),
         interval_seconds=30,
         timeout_seconds=5,
     )
@@ -38,11 +51,46 @@ async def test_create_monitor(
 
     assert isinstance(monitor.id, UUID)
     assert monitor.name == "Production API"
-    assert monitor.url == "https://example.com/health"
+    assert monitor.monitor_type is MonitorType.HTTP
+
+    assert isinstance(
+        monitor.config,
+        HttpMonitorConfig,
+    )
+
+    assert monitor.config.url == "https://example.com/health"
+
     assert monitor.interval_seconds == 30
     assert monitor.timeout_seconds == 5
-    assert monitor.status == MonitorStatus.PENDING
+    assert monitor.status is MonitorStatus.PENDING
     assert monitor.created_at.tzinfo is not None
+
+
+async def test_create_tcp_monitor(
+    service: MonitorService,
+) -> None:
+    data = MonitorCreate(
+        name="PostgreSQL",
+        monitor_type=MonitorType.TCP,
+        config=TcpMonitorConfigCreate(
+            host="database.example.com",
+            port=5432,
+        ),
+        interval_seconds=30,
+        timeout_seconds=5,
+    )
+
+    monitor = await service.create(data)
+
+    assert monitor.monitor_type is MonitorType.TCP
+
+    assert isinstance(
+        monitor.config,
+        TcpMonitorConfig,
+    )
+
+    assert monitor.config.host == "database.example.com"
+    assert monitor.config.port == 5432
 
 
 async def test_get_monitor_by_id(
@@ -51,7 +99,10 @@ async def test_get_monitor_by_id(
     created_monitor = await service.create(
         MonitorCreate(
             name="Production API",
-            url="https://example.com/health",
+            monitor_type=MonitorType.HTTP,
+            config=HttpMonitorConfigCreate(
+                url="https://example.com/health",
+            ),
         )
     )
 
@@ -75,7 +126,10 @@ async def test_update_monitor(
     created_monitor = await service.create(
         MonitorCreate(
             name="Production API",
-            url="https://example.com/health",
+            monitor_type=MonitorType.HTTP,
+            config=HttpMonitorConfigCreate(
+                url="https://example.com/health",
+            ),
             interval_seconds=30,
             timeout_seconds=5,
         )
@@ -95,13 +149,48 @@ async def test_update_monitor(
     assert updated_monitor.timeout_seconds == 15
 
 
+async def test_update_http_monitor_config(
+    service: MonitorService,
+) -> None:
+    created_monitor = await service.create(
+        MonitorCreate(
+            name="Production API",
+            monitor_type=MonitorType.HTTP,
+            config=HttpMonitorConfigCreate(
+                url="https://example.com/health",
+            ),
+        )
+    )
+
+    updated_monitor = await service.update(
+        created_monitor.id,
+        MonitorUpdate(
+            config={
+                "url": "https://example.org/health",
+            },
+        ),
+    )
+
+    assert updated_monitor is not None
+
+    assert isinstance(
+        updated_monitor.config,
+        HttpMonitorConfig,
+    )
+
+    assert updated_monitor.config.url == "https://example.org/health"
+
+
 async def test_delete_monitor(
     service: MonitorService,
 ) -> None:
     created_monitor = await service.create(
         MonitorCreate(
             name="Production API",
-            url="https://example.com/health",
+            monitor_type=MonitorType.HTTP,
+            config=HttpMonitorConfigCreate(
+                url="https://example.com/health",
+            ),
         )
     )
 

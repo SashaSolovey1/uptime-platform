@@ -7,8 +7,8 @@ from uptime_platform.checks.entities import (
     CheckResult,
 )
 from uptime_platform.checks.protocols import (
+    CheckerFactoryProtocol,
     CheckRepositoryProtocol,
-    HttpCheckerProtocol,
 )
 from uptime_platform.incidents.entities import (
     Incident,
@@ -21,8 +21,12 @@ from uptime_platform.maintenance.protocols import (
     MaintenanceWindowRepositoryProtocol,
 )
 from uptime_platform.monitors.entities import MonitorStatus
-from uptime_platform.monitors.protocols import MonitorRepositoryProtocol
-from uptime_platform.monitors.state import apply_check_result
+from uptime_platform.monitors.protocols import (
+    MonitorRepositoryProtocol,
+)
+from uptime_platform.monitors.state import (
+    apply_check_result,
+)
 from uptime_platform.outbox.entities import (
     OutboxEvent,
     OutboxEventType,
@@ -39,14 +43,14 @@ class CheckService:
         check_repository: CheckRepositoryProtocol,
         incident_repository: IncidentRepositoryProtocol,
         outbox_repository: OutboxRepositoryProtocol,
-        checker: HttpCheckerProtocol,
+        checker_factory: CheckerFactoryProtocol,
         maintenance_repository: MaintenanceWindowRepositoryProtocol,
     ) -> None:
         self._monitor_repository = monitor_repository
         self._check_repository = check_repository
         self._incident_repository = incident_repository
         self._outbox_repository = outbox_repository
-        self._checker = checker
+        self._checker_factory = checker_factory
         self._maintenance_repository = maintenance_repository
 
     async def run(
@@ -58,8 +62,9 @@ class CheckService:
         if monitor is None:
             return None
 
-        result = await self._checker.check(
-            url=monitor.url,
+        checker = self._checker_factory.create(monitor)
+
+        result = await checker.check(
             timeout_seconds=monitor.timeout_seconds,
         )
 
@@ -68,7 +73,11 @@ class CheckService:
             result=result,
         )
 
-    async def get_history(self, monitor_id: UUID, limit: int) -> list[Check] | None:
+    async def get_history(
+        self,
+        monitor_id: UUID,
+        limit: int,
+    ) -> list[Check] | None:
         monitor = await self._monitor_repository.get_by_id(monitor_id)
 
         if monitor is None:
@@ -84,7 +93,7 @@ class CheckService:
         monitor_id: UUID,
         result: CheckResult,
     ) -> Check | None:
-        monitor = await self._monitor_repository.get_by_id(monitor_id)
+        monitor = await self._monitor_repository.get_by_id_for_update(monitor_id)
 
         if monitor is None:
             return None
@@ -157,7 +166,7 @@ class CheckService:
 
             event = OutboxEvent(
                 id=uuid4(),
-                event_type=OutboxEventType.INCIDENT_OPENED,
+                event_type=(OutboxEventType.INCIDENT_OPENED),
                 payload={
                     "incident_id": str(incident.id),
                     "monitor_id": str(monitor_id),
@@ -186,7 +195,7 @@ class CheckService:
 
             event = OutboxEvent(
                 id=uuid4(),
-                event_type=OutboxEventType.INCIDENT_RESOLVED,
+                event_type=(OutboxEventType.INCIDENT_RESOLVED),
                 payload={
                     "incident_id": str(resolved_incident.id),
                     "monitor_id": str(monitor_id),

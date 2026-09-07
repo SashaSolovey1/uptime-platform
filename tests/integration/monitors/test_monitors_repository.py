@@ -6,8 +6,11 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uptime_platform.monitors.entities import (
+    HttpMonitorConfig,
     Monitor,
     MonitorStatus,
+    MonitorType,
+    TcpMonitorConfig,
 )
 from uptime_platform.monitors.models import MonitorModel
 from uptime_platform.monitors.sqlalchemy_repository import (
@@ -22,16 +25,23 @@ def repository(db_session: AsyncSession) -> SqlAlchemyMonitorRepository:
     return SqlAlchemyMonitorRepository(db_session)
 
 
-def make_monitor() -> Monitor:
+def make_monitor(
+    status: MonitorStatus = MonitorStatus.PENDING,
+) -> Monitor:
+    now = datetime.now(UTC)
+
     return Monitor(
         id=uuid4(),
         name="Production API",
-        url="https://example.com/health",
+        monitor_type=MonitorType.HTTP,
+        config=HttpMonitorConfig(
+            url="https://example.com/health",
+        ),
         interval_seconds=30,
         timeout_seconds=5,
-        status=MonitorStatus.PENDING,
-        created_at=datetime.now(UTC),
-        next_check_at=datetime.now(UTC),
+        status=status,
+        created_at=now,
+        next_check_at=now,
     )
 
 
@@ -68,7 +78,10 @@ async def test_get_monitor_by_id(
     model = MonitorModel(
         id=monitor_id,
         name="Production API",
-        url="https://example.com/health",
+        monitor_type=MonitorType.HTTP,
+        config={
+            "url": "https://example.com/health",
+        },
         interval_seconds=30,
         timeout_seconds=5,
         status=MonitorStatus.PENDING,
@@ -86,7 +99,16 @@ async def test_get_monitor_by_id(
     assert monitor is not None
     assert monitor.id == monitor_id
     assert monitor.name == "Production API"
-    assert monitor.url == "https://example.com/health"
+
+    assert monitor.monitor_type is MonitorType.HTTP
+
+    assert isinstance(
+        monitor.config,
+        HttpMonitorConfig,
+    )
+
+    assert monitor.config.url == "https://example.com/health"
+
     assert monitor.interval_seconds == 30
     assert monitor.timeout_seconds == 5
     assert monitor.status == MonitorStatus.PENDING
@@ -150,7 +172,9 @@ async def test_get_all_monitors(
     second = replace(
         make_monitor(),
         name="Website",
-        url="https://example.org",
+        config=HttpMonitorConfig(
+            url="https://example.org",
+        ),
     )
 
     await repository.create(first)
@@ -166,3 +190,55 @@ async def test_get_all_monitors(
         first.id,
         second.id,
     }
+
+
+async def test_tcp_monitor_round_trip(
+    repository: SqlAlchemyMonitorRepository,
+    db_session: AsyncSession,
+) -> None:
+    now = datetime.now(UTC)
+
+    monitor = Monitor(
+        id=uuid4(),
+        name="PostgreSQL",
+        monitor_type=MonitorType.TCP,
+        config=TcpMonitorConfig(
+            host="database.example.com",
+            port=5432,
+        ),
+        interval_seconds=30,
+        timeout_seconds=5,
+        status=MonitorStatus.PENDING,
+        created_at=now,
+        next_check_at=now,
+    )
+
+    await repository.create(monitor)
+
+    db_session.expunge_all()
+
+    model = await db_session.get(
+        MonitorModel,
+        monitor.id,
+    )
+
+    assert model is not None
+    assert model.monitor_type is MonitorType.TCP
+
+    assert model.config == {
+        "host": "database.example.com",
+        "port": 5432,
+    }
+
+    found_monitor = await repository.get_by_id(monitor.id)
+
+    assert found_monitor is not None
+    assert found_monitor.monitor_type is MonitorType.TCP
+
+    assert isinstance(
+        found_monitor.config,
+        TcpMonitorConfig,
+    )
+
+    assert found_monitor.config.host == "database.example.com"
+    assert found_monitor.config.port == 5432
