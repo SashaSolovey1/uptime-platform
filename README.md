@@ -8,7 +8,10 @@ Self-hosted uptime monitoring, incident management, and public status pages buil
 
 ## Features
 
-- HTTP uptime monitoring with automatic scheduling and check history
+- HTTP and TCP uptime monitoring with automatic scheduling and check history
+- Typed monitor configurations for HTTP and TCP targets
+- Automatic checker selection based on monitor type
+- Serialized monitor state updates to prevent concurrent check races
 - Automatic incident detection and recovery
 - Maintenance windows
 - Public status pages
@@ -54,97 +57,47 @@ Health check:
 http://127.0.0.1:8000/health
 ```
 
+## API
+
+The platform exposes a REST API for managing monitors, checks, incidents, maintenance windows, status pages, statistics, and notification destinations.
+
+HTTP and TCP monitors use different configuration structures depending on the selected monitor type.
+
+The current request and response schemas, available endpoints, validation rules, and example payloads can be found in the interactive Swagger documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
 ## Monitor Statistics
 
-Get statistics for a preset period:
+Monitor statistics are available for 24h, 7d, 30d, and custom time ranges.
 
-```text
-GET /api/v1/monitors/{monitor_id}/statistics?period=7d
-```
+Statistics include uptime percentage, successful and failed check counts, total checks, and average response time.
 
-Or use a custom time range:
-
-```text
-GET /api/v1/monitors/{monitor_id}/statistics?starts_at=2026-09-01T00:00:00Z&ends_at=2026-09-05T00:00:00Z
-```
-
-Statistics include uptime percentage, check counts, and average response time.
+See the Swagger documentation for the available statistics endpoints and request parameters.
 
 ## Notification Destinations
 
-Notification destinations are configured through the API.
-
 Notifications are sent when incidents are opened or resolved.
 
-### Webhook
+Supported notification destinations:
 
-```bash
-curl -X POST \
-  http://127.0.0.1:8000/api/v1/notification-destinations \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Production webhook",
-    "destination_type": "webhook",
-    "enabled": true,
-    "config": {
-      "url": "https://example.com/webhook",
-      "secret": "change-this-secret"
-    }
-  }'
-```
+- Webhook
+- Telegram
+- Email
 
-Webhook requests are signed with HMAC-SHA256 and include event ID, timestamp, and signature headers.
+Webhook requests support HMAC-SHA256 signatures.
 
-### Telegram
-
-Create a bot with BotFather and obtain its bot token and target chat ID.
-
-```bash
-curl -X POST \
-  http://127.0.0.1:8000/api/v1/notification-destinations \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Production Telegram",
-    "destination_type": "telegram",
-    "enabled": true,
-    "config": {
-      "bot_token": "your-bot-token",
-      "chat_id": "your-chat-id"
-    }
-  }'
-```
-
-### Email
-
-Email notifications are delivered through an SMTP server.
-
-```bash
-curl -X POST \
-  http://127.0.0.1:8000/api/v1/notification-destinations \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Production email",
-    "destination_type": "email",
-    "enabled": true,
-    "config": {
-      "host": "smtp.example.com",
-      "port": 587,
-      "username": "uptime@example.com",
-      "password": "change-this-password",
-      "from_email": "uptime@example.com",
-      "to_email": "admin@example.com",
-      "security": "starttls"
-    }
-  }'
-```
-
-Supported SMTP security modes:
+Email notifications are delivered through SMTP with the following security modes:
 
 - `none`
 - `starttls`
 - `tls`
 
 Sensitive destination credentials such as webhook secrets, Telegram bot tokens, and SMTP passwords are not returned by the API.
+
+See the Swagger documentation for notification destination configuration and request schemas.
 
 ## Development
 
@@ -241,7 +194,7 @@ Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pyda
 
 ## Planned
 
-- TCP, DNS, and TLS certificate monitoring
+- DNS and TLS certificate monitoring
 - Organizations, RBAC, and API keys
 - Prometheus metrics and Grafana dashboards
 - Encrypted notification credentials
@@ -258,7 +211,7 @@ docker pull sashastudent/uptime-platform:latest
 Versioned images are also available:
 
 ```bash
-docker pull sashastudent/uptime-platform:0.5.0
+docker pull sashastudent/uptime-platform:0.6.0
 ```
 
 ## License
