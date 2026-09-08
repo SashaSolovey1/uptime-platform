@@ -1,9 +1,11 @@
+from uptime_platform.checks.dns import DnsChecker
 from uptime_platform.checks.http import HttpChecker
 from uptime_platform.checks.protocols import (
     CheckerProtocol,
 )
 from uptime_platform.checks.tcp import TcpChecker
 from uptime_platform.monitors.entities import (
+    DnsMonitorConfig,
     HttpMonitorConfig,
     Monitor,
     MonitorType,
@@ -37,6 +39,18 @@ class CheckerFactory:
             return TcpChecker(
                 host=monitor.config.host,
                 port=monitor.config.port,
+            )
+
+        if monitor.monitor_type is MonitorType.DNS:
+            if not isinstance(
+                monitor.config,
+                DnsMonitorConfig,
+            ):
+                raise TypeError("DNS monitor has invalid config")
+
+            return DnsChecker(
+                host=monitor.config.host,
+                record_type=monitor.config.record_type,
             )
 
         raise ValueError(f"Unsupported monitor type: {monitor.monitor_type}")

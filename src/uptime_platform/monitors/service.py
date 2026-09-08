@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from uptime_platform.monitors.entities import (
+    DnsMonitorConfig,
     HttpMonitorConfig,
     Monitor,
     MonitorConfig,
@@ -13,6 +14,8 @@ from uptime_platform.monitors.protocols import (
     MonitorRepositoryProtocol,
 )
 from uptime_platform.monitors.schemas import (
+    DnsMonitorConfigCreate,
+    DnsMonitorConfigUpdate,
     HttpMonitorConfigCreate,
     HttpMonitorConfigUpdate,
     MonitorCreate,
@@ -42,6 +45,15 @@ def _create_config(
             port=config.port,
         )
 
+    if isinstance(
+        config,
+        DnsMonitorConfigCreate,
+    ):
+        return DnsMonitorConfig(
+            host=config.host,
+            record_type=config.record_type,
+        )
+
     raise TypeError(f"Unsupported monitor config: {type(config)}")
 
 
@@ -49,6 +61,10 @@ def _update_config(
     current: MonitorConfig,
     update: (HttpMonitorConfigUpdate | TcpMonitorConfigUpdate),
 ) -> MonitorConfig:
+
+    if not update.model_fields_set:
+        return current
+
     if isinstance(current, HttpMonitorConfig) and isinstance(
         update,
         HttpMonitorConfigUpdate,
@@ -64,6 +80,19 @@ def _update_config(
         return TcpMonitorConfig(
             host=(update.host if update.host is not None else current.host),
             port=(update.port if update.port is not None else current.port),
+        )
+
+    if isinstance(current, DnsMonitorConfig) and isinstance(
+        update,
+        DnsMonitorConfigUpdate,
+    ):
+        return DnsMonitorConfig(
+            host=(update.host if update.host is not None else current.host),
+            record_type=(
+                update.record_type
+                if update.record_type is not None
+                else current.record_type
+            ),
         )
 
     raise ValueError("Monitor config type does not match monitor type")

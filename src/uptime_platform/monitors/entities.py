@@ -14,6 +14,15 @@ class MonitorStatus(StrEnum):
 class MonitorType(StrEnum):
     HTTP = "http"
     TCP = "tcp"
+    DNS = "dns"
+
+
+class DnsRecordType(StrEnum):
+    A = "A"
+    AAAA = "AAAA"
+    CNAME = "CNAME"
+    MX = "MX"
+    TXT = "TXT"
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,7 +36,13 @@ class TcpMonitorConfig:
     port: int
 
 
-type MonitorConfig = HttpMonitorConfig | TcpMonitorConfig
+@dataclass(frozen=True, slots=True)
+class DnsMonitorConfig:
+    host: str
+    record_type: DnsRecordType
+
+
+type MonitorConfig = HttpMonitorConfig | TcpMonitorConfig | DnsMonitorConfig
 
 
 @dataclass(frozen=True, slots=True)

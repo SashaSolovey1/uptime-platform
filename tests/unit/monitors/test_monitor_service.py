@@ -3,6 +3,8 @@ from uuid import UUID, uuid4
 import pytest
 
 from uptime_platform.monitors.entities import (
+    DnsMonitorConfig,
+    DnsRecordType,
     HttpMonitorConfig,
     MonitorStatus,
     MonitorType,
@@ -12,6 +14,7 @@ from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
 )
 from uptime_platform.monitors.schemas import (
+    DnsMonitorConfigCreate,
     HttpMonitorConfigCreate,
     MonitorCreate,
     MonitorUpdate,
@@ -91,6 +94,33 @@ async def test_create_tcp_monitor(
 
     assert monitor.config.host == "database.example.com"
     assert monitor.config.port == 5432
+
+
+async def test_create_dns_monitor(
+    service: MonitorService,
+) -> None:
+    data = MonitorCreate(
+        name="Example DNS",
+        monitor_type=MonitorType.DNS,
+        config=DnsMonitorConfigCreate(
+            host="example.com",
+            record_type=DnsRecordType.A,
+        ),
+        interval_seconds=30,
+        timeout_seconds=5,
+    )
+
+    monitor = await service.create(data)
+
+    assert monitor.monitor_type is MonitorType.DNS
+
+    assert isinstance(
+        monitor.config,
+        DnsMonitorConfig,
+    )
+
+    assert monitor.config.host == "example.com"
+    assert monitor.config.record_type is DnsRecordType.A
 
 
 async def test_get_monitor_by_id(

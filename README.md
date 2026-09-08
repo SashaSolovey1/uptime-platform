@@ -9,7 +9,8 @@ Self-hosted uptime monitoring, incident management, and public status pages buil
 ## Features
 
 - HTTP and TCP uptime monitoring with automatic scheduling and check history
-- Typed monitor configurations for HTTP and TCP targets
+- Typed monitor configurations for HTTP, TCP, and DNS targets
+- DNS monitoring for A, AAAA, CNAME, MX, and TXT records
 - Automatic checker selection based on monitor type
 - Serialized monitor state updates to prevent concurrent check races
 - Automatic incident detection and recovery

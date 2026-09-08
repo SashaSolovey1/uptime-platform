@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uptime_platform.monitors.entities import (
+    DnsMonitorConfig,
+    DnsRecordType,
     HttpMonitorConfig,
     Monitor,
     MonitorConfig,
@@ -182,6 +184,15 @@ class SqlAlchemyMonitorRepository:
                 "port": config.port,
             }
 
+        if isinstance(
+            config,
+            DnsMonitorConfig,
+        ):
+            return {
+                "host": config.host,
+                "record_type": config.record_type.value,
+            }
+
         raise TypeError(f"Unsupported monitor config: {type(config)}")
 
     @staticmethod
@@ -197,6 +208,12 @@ class SqlAlchemyMonitorRepository:
             config = TcpMonitorConfig(
                 host=str(model.config["host"]),
                 port=int(model.config["port"]),
+            )
+
+        elif model.monitor_type is MonitorType.DNS:
+            config = DnsMonitorConfig(
+                host=str(model.config["host"]),
+                record_type=DnsRecordType(str(model.config["record_type"])),
             )
 
         else:

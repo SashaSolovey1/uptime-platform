@@ -10,6 +10,7 @@ from pydantic import (
 )
 
 from uptime_platform.monitors.entities import (
+    DnsRecordType,
     MonitorStatus,
     MonitorType,
 )
@@ -39,6 +40,16 @@ class TcpMonitorConfigCreate(BaseModel):
     )
 
 
+class DnsMonitorConfigCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    host: str = Field(
+        min_length=1,
+        max_length=253,
+    )
+    record_type: DnsRecordType
+
+
 class MonitorCreate(BaseModel):
     name: str = Field(
         min_length=1,
@@ -47,7 +58,7 @@ class MonitorCreate(BaseModel):
 
     monitor_type: MonitorType
 
-    config: HttpMonitorConfigCreate | TcpMonitorConfigCreate
+    config: HttpMonitorConfigCreate | TcpMonitorConfigCreate | DnsMonitorConfigCreate
 
     interval_seconds: int = Field(
         default=60,
@@ -89,6 +100,12 @@ class MonitorCreate(BaseModel):
         ):
             raise ValueError("TCP monitor requires TCP configuration")
 
+        if self.monitor_type is MonitorType.DNS and not isinstance(
+            self.config,
+            DnsMonitorConfigCreate,
+        ):
+            raise ValueError("DNS monitor requires DNS configuration")
+
         return self
 
 
@@ -118,6 +135,17 @@ class TcpMonitorConfigUpdate(BaseModel):
     )
 
 
+class DnsMonitorConfigUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    host: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=253,
+    )
+    record_type: DnsRecordType | None = None
+
+
 class MonitorUpdate(BaseModel):
     name: str | None = Field(
         default=None,
@@ -125,7 +153,9 @@ class MonitorUpdate(BaseModel):
         max_length=100,
     )
 
-    config: HttpMonitorConfigUpdate | TcpMonitorConfigUpdate | None = None
+    config: (
+        HttpMonitorConfigUpdate | TcpMonitorConfigUpdate | DnsMonitorConfigUpdate | None
+    ) = None
 
     interval_seconds: int | None = Field(
         default=None,
@@ -169,6 +199,13 @@ class TcpMonitorConfigResponse(BaseModel):
     port: int
 
 
+class DnsMonitorConfigResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    host: str
+    record_type: DnsRecordType
+
+
 class MonitorResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
@@ -178,7 +215,9 @@ class MonitorResponse(BaseModel):
     name: str
     monitor_type: MonitorType
 
-    config: HttpMonitorConfigResponse | TcpMonitorConfigResponse
+    config: (
+        HttpMonitorConfigResponse | TcpMonitorConfigResponse | DnsMonitorConfigResponse
+    )
 
     interval_seconds: int
     timeout_seconds: int

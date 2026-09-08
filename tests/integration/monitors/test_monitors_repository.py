@@ -6,6 +6,8 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uptime_platform.monitors.entities import (
+    DnsMonitorConfig,
+    DnsRecordType,
     HttpMonitorConfig,
     Monitor,
     MonitorStatus,
@@ -242,3 +244,55 @@ async def test_tcp_monitor_round_trip(
 
     assert found_monitor.config.host == "database.example.com"
     assert found_monitor.config.port == 5432
+
+
+async def test_dns_monitor_round_trip(
+    repository: SqlAlchemyMonitorRepository,
+    db_session: AsyncSession,
+) -> None:
+    now = datetime.now(UTC)
+
+    monitor = Monitor(
+        id=uuid4(),
+        name="Example DNS",
+        monitor_type=MonitorType.DNS,
+        config=DnsMonitorConfig(
+            host="example.com",
+            record_type=DnsRecordType.A,
+        ),
+        interval_seconds=30,
+        timeout_seconds=5,
+        status=MonitorStatus.PENDING,
+        created_at=now,
+        next_check_at=now,
+    )
+
+    await repository.create(monitor)
+
+    db_session.expunge_all()
+
+    model = await db_session.get(
+        MonitorModel,
+        monitor.id,
+    )
+
+    assert model is not None
+    assert model.monitor_type is MonitorType.DNS
+
+    assert model.config == {
+        "host": "example.com",
+        "record_type": "A",
+    }
+
+    found_monitor = await repository.get_by_id(monitor.id)
+
+    assert found_monitor is not None
+    assert found_monitor.monitor_type is MonitorType.DNS
+
+    assert isinstance(
+        found_monitor.config,
+        DnsMonitorConfig,
+    )
+
+    assert found_monitor.config.host == "example.com"
+    assert found_monitor.config.record_type is DnsRecordType.A
