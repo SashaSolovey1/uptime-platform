@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     Text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from uptime_platform.db.base import Base
@@ -50,6 +51,11 @@ class CheckModel(Base):
 
     error: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    details: Mapped[dict[str, object] | None] = mapped_column(
+        JSONB,
         nullable=True,
     )
 

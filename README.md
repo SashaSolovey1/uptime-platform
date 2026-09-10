@@ -8,9 +8,12 @@ Self-hosted uptime monitoring, incident management, and public status pages buil
 
 ## Features
 
-- HTTP and TCP uptime monitoring with automatic scheduling and check history
-- Typed monitor configurations for HTTP, TCP, and DNS targets
+- HTTP, TCP, DNS, TLS certificate, and ICMP monitoring with automatic scheduling and check history
+- Typed monitor configurations for all supported monitor types
+- Advanced HTTP monitoring with configurable methods, expected status codes, response body checks, redirect handling, and TLS verification
 - DNS monitoring for A, AAAA, CNAME, MX, and TXT records
+- TLS certificate validation and expiration monitoring
+- ICMP availability and response time monitoring
 - Automatic checker selection based on monitor type
 - Serialized monitor state updates to prevent concurrent check races
 - Automatic incident detection and recovery
@@ -62,7 +65,7 @@ http://127.0.0.1:8000/health
 
 The platform exposes a REST API for managing monitors, checks, incidents, maintenance windows, status pages, statistics, and notification destinations.
 
-HTTP and TCP monitors use different configuration structures depending on the selected monitor type.
+HTTP, TCP, DNS, TLS, and ICMP monitors use different configuration structures depending on the selected monitor type.
 
 The current request and response schemas, available endpoints, validation rules, and example payloads can be found in the interactive Swagger documentation:
 
@@ -191,15 +194,19 @@ make docker-reset
 
 ## Tech Stack
 
-Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · httpx2 · aiosmtplib · Docker Compose · pytest · Ruff · uv
+Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · httpx2 · dnspython · icmplib · aiosmtplib · Docker Compose · pytest · Ruff · uv
 
-## Planned
+## Roadmap
 
-- DNS and TLS certificate monitoring
-- Organizations, RBAC, and API keys
-- Prometheus metrics and Grafana dashboards
+- Organizations, authentication, RBAC, and API keys
 - Encrypted notification credentials
-- CI/CD
+- Slack notification destination
+- Scheduler claiming and multi-instance safety
+- Check history retention and cleanup
+- Prometheus metrics and Grafana dashboards
+- Vue.js web UI for managing monitors, incidents, maintenance windows, notification destinations, status pages, and organizations
+- CI/CD with automated tests and Docker image publishing
+- Production hardening and deployment documentation
 
 ## Docker
 
@@ -207,12 +214,6 @@ The image is available on Docker Hub:
 
 ```bash
 docker pull sashastudent/uptime-platform:latest
-```
-
-Versioned images are also available:
-
-```bash
-docker pull sashastudent/uptime-platform:0.6.0
 ```
 
 ## License

@@ -5,23 +5,21 @@ Revises: ce47d3285727
 Create Date: 2026-09-08 20:35:36.711640
 
 """
-from typing import Sequence, Union
 
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '852cc32ed855'
-down_revision: Union[str, Sequence[str], None] = 'ce47d3285727'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "852cc32ed855"
+down_revision: str | Sequence[str] | None = "ce47d3285727"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TYPE monitor_type ADD VALUE IF NOT EXISTS 'dns'"
-    )
+    op.execute("ALTER TYPE monitor_type ADD VALUE IF NOT EXISTS 'dns'")
 
 
 def downgrade() -> None:
@@ -38,13 +36,9 @@ def downgrade() -> None:
     ).scalar_one()
 
     if dns_monitor_count > 0:
-        raise RuntimeError(
-            "Cannot downgrade while DNS monitors exist"
-        )
+        raise RuntimeError("Cannot downgrade while DNS monitors exist")
 
-    op.execute(
-        "ALTER TYPE monitor_type RENAME TO monitor_type_old"
-    )
+    op.execute("ALTER TYPE monitor_type RENAME TO monitor_type_old")
 
     op.execute(
         """
@@ -62,6 +56,4 @@ def downgrade() -> None:
         """
     )
 
-    op.execute(
-        "DROP TYPE monitor_type_old"
-    )
+    op.execute("DROP TYPE monitor_type_old")

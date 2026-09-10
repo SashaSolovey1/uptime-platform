@@ -29,6 +29,7 @@ class SqlAlchemyCheckRepository:
             response_time_ms=result.response_time_ms,
             status_code=result.status_code,
             error=result.error,
+            details=result.details,
             checked_at=datetime.now(UTC),
         )
 
@@ -51,6 +52,7 @@ class SqlAlchemyCheckRepository:
             status_code=model.status_code,
             error=model.error,
             checked_at=model.checked_at,
+            details=model.details,
         )
 
     async def get_by_monitor_id(self, monitor_id: UUID, limit: int) -> list[Check]:

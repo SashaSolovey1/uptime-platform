@@ -50,7 +50,13 @@ def test_create_monitor(client: TestClient) -> None:
 
     assert data["config"] == {
         "url": "https://example.com/health",
+        "method": "GET",
+        "expected_status_codes": None,
+        "body_contains": None,
+        "follow_redirects": False,
+        "verify_tls": True,
     }
+
     assert data["interval_seconds"] == 30
     assert data["timeout_seconds"] == 5
     assert data["status"] == "pending"

@@ -45,6 +45,9 @@ services:
     image: ${APP_IMAGE:-sashastudent/uptime-platform:latest}
     restart: unless-stopped
 
+    cap_add:
+      - NET_RAW
+
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-uptime}:${POSTGRES_PASSWORD:-uptime}@postgres:5432/${POSTGRES_DB:-uptime}
       NOTIFICATION_TIMEOUT_SECONDS: ${NOTIFICATION_TIMEOUT_SECONDS:-5}
@@ -81,6 +84,9 @@ services:
   scheduler:
     image: ${APP_IMAGE:-sashastudent/uptime-platform:latest}
     restart: unless-stopped
+
+    cap_add:
+      - NET_RAW
 
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-uptime}:${POSTGRES_PASSWORD:-uptime}@postgres:5432/${POSTGRES_DB:-uptime}

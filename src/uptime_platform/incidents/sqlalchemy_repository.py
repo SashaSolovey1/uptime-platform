@@ -78,7 +78,7 @@ class SqlAlchemyIncidentRepository:
     ) -> Incident | None:
         statement = select(IncidentModel).where(
             IncidentModel.monitor_id == monitor_id,
-            IncidentModel.status is IncidentStatus.OPEN,
+            IncidentModel.status == IncidentStatus.OPEN,
         )
 
         result = await self._session.execute(statement)

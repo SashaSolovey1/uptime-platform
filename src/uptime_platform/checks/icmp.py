@@ -1,20 +1,17 @@
 import time
 
-import dns.asyncresolver
-import dns.exception
+from icmplib import async_ping
+from icmplib.exceptions import ICMPLibError
 
 from uptime_platform.checks.entities import CheckResult
-from uptime_platform.monitors.entities import DnsRecordType
 
 
-class DnsChecker:
+class IcmpChecker:
     def __init__(
         self,
         host: str,
-        record_type: DnsRecordType,
     ) -> None:
         self._host = host
-        self._record_type = record_type
 
     async def check(
         self,
@@ -23,27 +20,42 @@ class DnsChecker:
         started_at = time.perf_counter()
 
         try:
-            answer = await dns.asyncresolver.resolve(
+            result = await async_ping(
                 self._host,
-                self._record_type.value,
-                lifetime=timeout_seconds,
+                count=1,
+                timeout=timeout_seconds,
+                privileged=True,
             )
 
             response_time_ms = (time.perf_counter() - started_at) * 1000
+
+            details = {
+                "address": result.address,
+                "packets_sent": result.packets_sent,
+                "packets_received": result.packets_received,
+                "packet_loss": result.packet_loss,
+                "avg_rtt_ms": result.avg_rtt,
+            }
+
+            if not result.is_alive:
+                return CheckResult(
+                    success=False,
+                    response_time_ms=response_time_ms,
+                    status_code=None,
+                    error="No ICMP reply received",
+                    details=details,
+                )
 
             return CheckResult(
                 success=True,
                 response_time_ms=response_time_ms,
                 status_code=None,
                 error=None,
-                details={
-                    "record_type": self._record_type.value,
-                    "records": [record.to_text() for record in answer],
-                },
+                details=details,
             )
 
         except (
-            dns.exception.DNSException,
+            ICMPLibError,
             OSError,
         ) as exc:
             response_time_ms = (time.perf_counter() - started_at) * 1000

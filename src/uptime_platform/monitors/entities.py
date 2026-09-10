@@ -15,6 +15,13 @@ class MonitorType(StrEnum):
     HTTP = "http"
     TCP = "tcp"
     DNS = "dns"
+    TLS = "tls"
+    ICMP = "icmp"
+
+
+class HttpMethod(StrEnum):
+    GET = "GET"
+    HEAD = "HEAD"
 
 
 class DnsRecordType(StrEnum):
@@ -28,6 +35,11 @@ class DnsRecordType(StrEnum):
 @dataclass(frozen=True, slots=True)
 class HttpMonitorConfig:
     url: str
+    method: HttpMethod = HttpMethod.GET
+    expected_status_codes: tuple[int, ...] | None = None
+    body_contains: str | None = None
+    follow_redirects: bool = False
+    verify_tls: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,7 +54,25 @@ class DnsMonitorConfig:
     record_type: DnsRecordType
 
 
-type MonitorConfig = HttpMonitorConfig | TcpMonitorConfig | DnsMonitorConfig
+@dataclass(frozen=True, slots=True)
+class TlsMonitorConfig:
+    host: str
+    port: int = 443
+    expiry_threshold_days: int = 14
+
+
+@dataclass(frozen=True, slots=True)
+class IcmpMonitorConfig:
+    host: str
+
+
+type MonitorConfig = (
+    HttpMonitorConfig
+    | TcpMonitorConfig
+    | DnsMonitorConfig
+    | TlsMonitorConfig
+    | IcmpMonitorConfig
+)
 
 
 @dataclass(frozen=True, slots=True)

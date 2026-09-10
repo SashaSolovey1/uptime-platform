@@ -5,10 +5,12 @@ from uuid import UUID, uuid4
 from uptime_platform.monitors.entities import (
     DnsMonitorConfig,
     HttpMonitorConfig,
+    IcmpMonitorConfig,
     Monitor,
     MonitorConfig,
     MonitorStatus,
     TcpMonitorConfig,
+    TlsMonitorConfig,
 )
 from uptime_platform.monitors.protocols import (
     MonitorRepositoryProtocol,
@@ -18,15 +20,25 @@ from uptime_platform.monitors.schemas import (
     DnsMonitorConfigUpdate,
     HttpMonitorConfigCreate,
     HttpMonitorConfigUpdate,
+    IcmpMonitorConfigCreate,
+    IcmpMonitorConfigUpdate,
     MonitorCreate,
     MonitorUpdate,
     TcpMonitorConfigCreate,
     TcpMonitorConfigUpdate,
+    TlsMonitorConfigCreate,
+    TlsMonitorConfigUpdate,
 )
 
 
 def _create_config(
-    config: (HttpMonitorConfigCreate | TcpMonitorConfigCreate),
+    config: (
+        HttpMonitorConfigCreate
+        | TcpMonitorConfigCreate
+        | DnsMonitorConfigCreate
+        | TlsMonitorConfigCreate
+        | IcmpMonitorConfigCreate
+    ),
 ) -> MonitorConfig:
     if isinstance(
         config,
@@ -34,6 +46,15 @@ def _create_config(
     ):
         return HttpMonitorConfig(
             url=str(config.url),
+            method=config.method,
+            expected_status_codes=(
+                tuple(config.expected_status_codes)
+                if config.expected_status_codes is not None
+                else None
+            ),
+            body_contains=config.body_contains,
+            follow_redirects=config.follow_redirects,
+            verify_tls=config.verify_tls,
         )
 
     if isinstance(
@@ -54,38 +75,85 @@ def _create_config(
             record_type=config.record_type,
         )
 
+    if isinstance(
+        config,
+        TlsMonitorConfigCreate,
+    ):
+        return TlsMonitorConfig(
+            host=config.host,
+            port=config.port,
+            expiry_threshold_days=config.expiry_threshold_days,
+        )
+
+    if isinstance(
+        config,
+        IcmpMonitorConfigCreate,
+    ):
+        return IcmpMonitorConfig(
+            host=config.host,
+        )
+
     raise TypeError(f"Unsupported monitor config: {type(config)}")
 
 
 def _update_config(
     current: MonitorConfig,
-    update: (HttpMonitorConfigUpdate | TcpMonitorConfigUpdate),
+    data: dict[str, object],
 ) -> MonitorConfig:
-
-    if not update.model_fields_set:
-        return current
-
-    if isinstance(current, HttpMonitorConfig) and isinstance(
-        update,
-        HttpMonitorConfigUpdate,
+    if isinstance(
+        current,
+        HttpMonitorConfig,
     ):
+        update = HttpMonitorConfigUpdate.model_validate(data)
+
+        expected_status_codes = current.expected_status_codes
+
+        if "expected_status_codes" in update.model_fields_set:
+            expected_status_codes = (
+                tuple(update.expected_status_codes)
+                if update.expected_status_codes is not None
+                else None
+            )
+
+        body_contains = current.body_contains
+
+        if "body_contains" in update.model_fields_set:
+            body_contains = update.body_contains
+
         return HttpMonitorConfig(
             url=(str(update.url) if update.url is not None else current.url),
+            method=(update.method if update.method is not None else current.method),
+            expected_status_codes=expected_status_codes,
+            body_contains=body_contains,
+            follow_redirects=(
+                update.follow_redirects
+                if update.follow_redirects is not None
+                else current.follow_redirects
+            ),
+            verify_tls=(
+                update.verify_tls
+                if update.verify_tls is not None
+                else current.verify_tls
+            ),
         )
 
-    if isinstance(current, TcpMonitorConfig) and isinstance(
-        update,
-        TcpMonitorConfigUpdate,
+    if isinstance(
+        current,
+        TcpMonitorConfig,
     ):
+        update = TcpMonitorConfigUpdate.model_validate(data)
+
         return TcpMonitorConfig(
             host=(update.host if update.host is not None else current.host),
             port=(update.port if update.port is not None else current.port),
         )
 
-    if isinstance(current, DnsMonitorConfig) and isinstance(
-        update,
-        DnsMonitorConfigUpdate,
+    if isinstance(
+        current,
+        DnsMonitorConfig,
     ):
+        update = DnsMonitorConfigUpdate.model_validate(data)
+
         return DnsMonitorConfig(
             host=(update.host if update.host is not None else current.host),
             record_type=(
@@ -95,7 +163,33 @@ def _update_config(
             ),
         )
 
-    raise ValueError("Monitor config type does not match monitor type")
+    if isinstance(
+        current,
+        TlsMonitorConfig,
+    ):
+        update = TlsMonitorConfigUpdate.model_validate(data)
+
+        return TlsMonitorConfig(
+            host=(update.host if update.host is not None else current.host),
+            port=(update.port if update.port is not None else current.port),
+            expiry_threshold_days=(
+                update.expiry_threshold_days
+                if update.expiry_threshold_days is not None
+                else current.expiry_threshold_days
+            ),
+        )
+
+    if isinstance(
+        current,
+        IcmpMonitorConfig,
+    ):
+        update = IcmpMonitorConfigUpdate.model_validate(data)
+
+        return IcmpMonitorConfig(
+            host=(update.host if update.host is not None else current.host),
+        )
+
+    raise TypeError(f"Unsupported monitor config: {type(current)}")
 
 
 class MonitorService:
@@ -153,7 +247,7 @@ class MonitorService:
         if data.config is not None:
             config = _update_config(
                 current=monitor.config,
-                update=data.config,
+                data=data.config,
             )
 
         updated_monitor = replace(

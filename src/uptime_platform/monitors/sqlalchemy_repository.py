@@ -7,12 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uptime_platform.monitors.entities import (
     DnsMonitorConfig,
     DnsRecordType,
+    HttpMethod,
     HttpMonitorConfig,
+    IcmpMonitorConfig,
     Monitor,
     MonitorConfig,
     MonitorStatus,
     MonitorType,
     TcpMonitorConfig,
+    TlsMonitorConfig,
 )
 from uptime_platform.monitors.models import (
     MonitorModel,
@@ -173,6 +176,15 @@ class SqlAlchemyMonitorRepository:
         ):
             return {
                 "url": config.url,
+                "method": config.method.value,
+                "expected_status_codes": (
+                    list(config.expected_status_codes)
+                    if config.expected_status_codes is not None
+                    else None
+                ),
+                "body_contains": config.body_contains,
+                "follow_redirects": config.follow_redirects,
+                "verify_tls": config.verify_tls,
             }
 
         if isinstance(
@@ -193,6 +205,24 @@ class SqlAlchemyMonitorRepository:
                 "record_type": config.record_type.value,
             }
 
+        if isinstance(
+            config,
+            TlsMonitorConfig,
+        ):
+            return {
+                "host": config.host,
+                "port": config.port,
+                "expiry_threshold_days": config.expiry_threshold_days,
+            }
+
+        if isinstance(
+            config,
+            IcmpMonitorConfig,
+        ):
+            return {
+                "host": config.host,
+            }
+
         raise TypeError(f"Unsupported monitor config: {type(config)}")
 
     @staticmethod
@@ -200,8 +230,40 @@ class SqlAlchemyMonitorRepository:
         model: MonitorModel,
     ) -> Monitor:
         if model.monitor_type is MonitorType.HTTP:
+            raw_status_codes = model.config.get("expected_status_codes")
+
             config = HttpMonitorConfig(
                 url=str(model.config["url"]),
+                method=HttpMethod(
+                    str(
+                        model.config.get(
+                            "method",
+                            HttpMethod.GET.value,
+                        )
+                    )
+                ),
+                expected_status_codes=(
+                    tuple(int(status_code) for status_code in raw_status_codes)
+                    if raw_status_codes is not None
+                    else None
+                ),
+                body_contains=(
+                    str(model.config["body_contains"])
+                    if model.config.get("body_contains") is not None
+                    else None
+                ),
+                follow_redirects=bool(
+                    model.config.get(
+                        "follow_redirects",
+                        False,
+                    )
+                ),
+                verify_tls=bool(
+                    model.config.get(
+                        "verify_tls",
+                        True,
+                    )
+                ),
             )
 
         elif model.monitor_type is MonitorType.TCP:
@@ -214,6 +276,28 @@ class SqlAlchemyMonitorRepository:
             config = DnsMonitorConfig(
                 host=str(model.config["host"]),
                 record_type=DnsRecordType(str(model.config["record_type"])),
+            )
+
+        elif model.monitor_type is MonitorType.TLS:
+            config = TlsMonitorConfig(
+                host=str(model.config["host"]),
+                port=int(
+                    model.config.get(
+                        "port",
+                        443,
+                    )
+                ),
+                expiry_threshold_days=int(
+                    model.config.get(
+                        "expiry_threshold_days",
+                        14,
+                    )
+                ),
+            )
+
+        elif model.monitor_type is MonitorType.ICMP:
+            config = IcmpMonitorConfig(
+                host=str(model.config["host"]),
             )
 
         else:

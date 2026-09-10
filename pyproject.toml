@@ -1,6 +1,6 @@
 [project]
 name = "uptime-platform"
-version = "0.6.1"
+version = "0.7.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -17,6 +17,7 @@ dependencies = [
     "email-validator>=2.3.0",
     "aiosmtplib>=5.1.2",
     "dnspython>=2.8.0",
+    "icmplib>=3.0.4",
 ]
 
 [project.scripts]
