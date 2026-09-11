@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -15,6 +15,7 @@ from uptime_platform.notifications.in_memory_repository import (
 from uptime_platform.notifications.service import (
     NotificationFanoutService,
 )
+from uptime_platform.organizations.constants import DEFAULT_ORGANIZATION_ID
 from uptime_platform.outbox.entities import (
     OutboxEvent,
     OutboxEventType,
@@ -28,10 +29,12 @@ pytestmark = pytest.mark.anyio
 
 def make_destination(
     *,
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
     enabled: bool = True,
 ) -> NotificationDestination:
     return NotificationDestination(
         id=uuid4(),
+        organization_id=organization_id,
         name="Test webhook",
         destination_type=NotificationDestinationType.WEBHOOK,
         enabled=enabled,
@@ -48,6 +51,7 @@ def make_event() -> OutboxEvent:
 
     return OutboxEvent(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         event_type=OutboxEventType.INCIDENT_OPENED,
         payload={
             "incident_id": str(uuid4()),
@@ -185,3 +189,48 @@ async def test_fan_out_marks_event_processed_when_no_destinations_exist() -> Non
 
     assert processed_event is not None
     assert processed_event.processed_at is not None
+
+
+async def test_fan_out_only_uses_destinations_from_event_organization() -> None:
+    destination_repository = InMemoryNotificationDestinationRepository()
+    delivery_repository = InMemoryNotificationDeliveryRepository()
+    outbox_repository = InMemoryOutboxRepository()
+
+    first_organization_id = uuid4()
+    second_organization_id = uuid4()
+
+    first_destination = make_destination(
+        organization_id=first_organization_id,
+    )
+
+    second_destination = make_destination(
+        organization_id=second_organization_id,
+    )
+
+    await destination_repository.create(first_destination)
+    await destination_repository.create(second_destination)
+
+    event = OutboxEvent(
+        id=uuid4(),
+        organization_id=first_organization_id,
+        event_type=OutboxEventType.INCIDENT_OPENED,
+        payload={
+            "incident_id": str(uuid4()),
+            "monitor_id": str(uuid4()),
+        },
+        created_at=datetime.now(UTC),
+        processed_at=None,
+    )
+
+    await outbox_repository.create(event)
+
+    service = NotificationFanoutService(
+        destination_repository=destination_repository,
+        delivery_repository=delivery_repository,
+        outbox_repository=outbox_repository,
+    )
+
+    deliveries = await service.fan_out(event)
+
+    assert len(deliveries) == 1
+    assert deliveries[0].destination_id == first_destination.id

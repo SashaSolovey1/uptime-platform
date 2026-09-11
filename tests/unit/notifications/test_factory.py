@@ -18,11 +18,13 @@ from uptime_platform.notifications.telegram import (
 from uptime_platform.notifications.webhook import (
     WebhookNotificationChannel,
 )
+from uptime_platform.organizations.constants import DEFAULT_ORGANIZATION_ID
 
 
 def test_factory_creates_webhook_channel() -> None:
     destination = NotificationDestination(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="Webhook",
         destination_type=(NotificationDestinationType.WEBHOOK),
         enabled=True,
@@ -50,6 +52,7 @@ def test_factory_creates_webhook_channel() -> None:
 def test_factory_creates_telegram_channel() -> None:
     destination = NotificationDestination(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="Telegram",
         destination_type=(NotificationDestinationType.TELEGRAM),
         enabled=True,

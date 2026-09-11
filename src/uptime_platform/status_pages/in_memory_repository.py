@@ -25,8 +25,17 @@ class InMemoryStatusPageRepository:
     async def get_by_id(
         self,
         page_id: UUID,
+        organization_id: UUID,
     ) -> StatusPage | None:
-        return self._pages.get(page_id)
+        page = self._pages.get(page_id)
+
+        if page is None:
+            return None
+
+        if page.organization_id != organization_id:
+            return None
+
+        return page
 
     async def get_by_slug(
         self,
@@ -40,9 +49,16 @@ class InMemoryStatusPageRepository:
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[StatusPage]:
+        pages = [
+            page
+            for page in self._pages.values()
+            if page.organization_id == organization_id
+        ]
+
         return sorted(
-            self._pages.values(),
+            pages,
             key=lambda page: page.created_at,
             reverse=True,
         )
@@ -51,7 +67,12 @@ class InMemoryStatusPageRepository:
         self,
         page: StatusPage,
     ) -> StatusPage | None:
-        if page.id not in self._pages:
+        existing = self._pages.get(page.id)
+
+        if existing is None:
+            return None
+
+        if existing.organization_id != page.organization_id:
             return None
 
         self._pages[page.id] = page
@@ -61,8 +82,14 @@ class InMemoryStatusPageRepository:
     async def delete(
         self,
         page_id: UUID,
+        organization_id: UUID,
     ) -> bool:
-        if page_id not in self._pages:
+        page = self._pages.get(page_id)
+
+        if page is None:
+            return False
+
+        if page.organization_id != organization_id:
             return False
 
         del self._pages[page_id]

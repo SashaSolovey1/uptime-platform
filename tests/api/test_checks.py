@@ -5,6 +5,10 @@ from uuid import uuid4
 import httpx2
 import pytest
 
+from uptime_platform.auth.dependencies import (
+    get_organization_context,
+)
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.checks.dependencies import (
     get_check_service,
 )
@@ -28,6 +32,9 @@ from uptime_platform.monitors.entities import (
 )
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
+)
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
 )
 from uptime_platform.outbox.in_memory_repository import (
     InMemoryOutboxRepository,
@@ -95,7 +102,11 @@ async def client(
     incident_repository: InMemoryIncidentRepository,
     outbox_repository: InMemoryOutboxRepository,
     maintenance_repository: InMemoryMaintenanceWindowRepository,
+    organization_context: OrganizationContext,
 ) -> AsyncIterator[httpx2.AsyncClient]:
+
+    app.dependency_overrides[get_organization_context] = lambda: organization_context
+
     def override_check_service() -> CheckService:
         checker = StubChecker()
 
@@ -108,6 +119,7 @@ async def client(
             outbox_repository=outbox_repository,
             maintenance_repository=maintenance_repository,
             checker_factory=checker_factory,
+            organization_id=organization_context.organization.id,
         )
 
     app.dependency_overrides[get_check_service] = override_check_service
@@ -130,6 +142,7 @@ async def create_monitor(
 
     monitor = Monitor(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="Test monitor",
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(

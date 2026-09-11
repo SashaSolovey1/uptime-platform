@@ -5,6 +5,8 @@ from uuid import UUID, uuid4
 import httpx2
 import pytest
 
+from uptime_platform.auth.dependencies import get_organization_context
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.main import app
 from uptime_platform.monitors.entities import (
     HttpMonitorConfig,
@@ -15,13 +17,18 @@ from uptime_platform.monitors.entities import (
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
 )
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
 from uptime_platform.status_pages.dependencies import (
+    get_public_status_page_service,
     get_status_page_service,
 )
 from uptime_platform.status_pages.in_memory_repository import (
     InMemoryStatusPageRepository,
 )
 from uptime_platform.status_pages.service import (
+    PublicStatusPageService,
     StatusPageService,
 )
 
@@ -31,11 +38,13 @@ pytestmark = pytest.mark.anyio
 def make_monitor(
     status: MonitorStatus = MonitorStatus.UP,
     name: str = "Production API",
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
 ) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
+        organization_id=organization_id,
         name=name,
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(
@@ -46,10 +55,6 @@ def make_monitor(
         status=status,
         created_at=now,
         next_check_at=now,
-        failure_threshold=3,
-        recovery_threshold=2,
-        consecutive_failures=0,
-        consecutive_successes=0,
     )
 
 
@@ -67,14 +72,28 @@ def monitor_repository() -> InMemoryMonitorRepository:
 async def client(
     status_page_repository: InMemoryStatusPageRepository,
     monitor_repository: InMemoryMonitorRepository,
+    organization_context: OrganizationContext,
 ) -> AsyncIterator[httpx2.AsyncClient]:
+    app.dependency_overrides[get_organization_context] = lambda: organization_context
+
     def override_status_page_service() -> StatusPageService:
         return StatusPageService(
+            repository=status_page_repository,
+            monitor_repository=monitor_repository,
+            organization_id=organization_context.organization.id,
+        )
+
+    def override_public_status_page_service() -> PublicStatusPageService:
+        return PublicStatusPageService(
             repository=status_page_repository,
             monitor_repository=monitor_repository,
         )
 
     app.dependency_overrides[get_status_page_service] = override_status_page_service
+
+    app.dependency_overrides[get_public_status_page_service] = (
+        override_public_status_page_service
+    )
 
     transport = httpx2.ASGITransport(app=app)
 
@@ -420,3 +439,37 @@ async def test_delete_status_page(
     public_response = await client.get("/status/production")
 
     assert public_response.status_code == 404
+
+
+async def test_cannot_add_monitor_from_another_organization(
+    client: httpx2.AsyncClient,
+    monitor_repository: InMemoryMonitorRepository,
+) -> None:
+    monitor = make_monitor(
+        organization_id=uuid4(),
+    )
+
+    assert monitor.organization_id != DEFAULT_ORGANIZATION_ID
+
+    await monitor_repository.create(monitor)
+
+    create_response = await client.post(
+        "/api/v1/status-pages",
+        json={
+            "name": "Production",
+            "slug": "production",
+        },
+    )
+
+    assert create_response.status_code == 201
+
+    page_id = create_response.json()["id"]
+
+    response = await client.post(
+        f"/api/v1/status-pages/{page_id}/monitors/{monitor.id}"
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": "Status page or monitor not found",
+    }

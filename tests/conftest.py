@@ -1,4 +1,6 @@
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,8 +11,23 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.checks.models import CheckModel
 from uptime_platform.monitors.models import MonitorModel
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
+from uptime_platform.organizations.entities import (
+    Membership,
+    Organization,
+    OrganizationRole,
+)
+from uptime_platform.organizations.models import (
+    MembershipModel,  # noqa: F401
+    OrganizationModel,  # noqa: F401
+)
+from uptime_platform.users.entities import User
+from uptime_platform.users.models import UserModel  # noqa: F401
 
 
 class TestSettings(BaseSettings):
@@ -19,6 +36,7 @@ class TestSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env.test",
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
 
@@ -65,3 +83,35 @@ async def db_session(
             await session.execute(delete(CheckModel))
             await session.execute(delete(MonitorModel))
             await session.commit()
+
+
+@pytest.fixture
+def organization_context() -> OrganizationContext:
+    now = datetime.now(UTC)
+
+    user = User(
+        id=uuid4(),
+        email="owner@example.com",
+        password_hash="not-used",
+        created_at=now,
+    )
+
+    organization = Organization(
+        id=DEFAULT_ORGANIZATION_ID,
+        name="Test Organization",
+        created_at=now,
+    )
+
+    membership = Membership(
+        id=uuid4(),
+        organization_id=organization.id,
+        user_id=user.id,
+        role=OrganizationRole.OWNER,
+        created_at=now,
+    )
+
+    return OrganizationContext(
+        user=user,
+        organization=organization,
+        membership=membership,
+    )

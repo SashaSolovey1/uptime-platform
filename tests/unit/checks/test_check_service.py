@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -22,6 +22,9 @@ from uptime_platform.monitors.entities import (
 )
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
+)
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
 )
 from uptime_platform.outbox.entities import OutboxEventType
 from uptime_platform.outbox.in_memory_repository import (
@@ -69,11 +72,13 @@ def make_monitor(
     status: MonitorStatus = MonitorStatus.PENDING,
     consecutive_failures: int = 0,
     consecutive_successes: int = 0,
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
 ) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
+        organization_id=organization_id,
         name="Production API",
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(
@@ -136,11 +141,15 @@ async def test_successful_check_changes_monitor_to_up() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     check = await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert check is not None
     assert check.monitor_id == monitor.id
@@ -183,11 +192,15 @@ async def test_first_success_does_not_recover_down_monitor() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert updated_monitor is not None
     assert updated_monitor.status is MonitorStatus.DOWN
@@ -227,11 +240,15 @@ async def test_second_success_recovers_down_monitor() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert updated_monitor is not None
     assert updated_monitor.status is MonitorStatus.UP
@@ -267,11 +284,15 @@ async def test_failed_check_keeps_down_monitor_down() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert updated_monitor is not None
     assert updated_monitor.status is MonitorStatus.DOWN
@@ -305,11 +326,15 @@ async def test_paused_monitor_keeps_paused_status() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert updated_monitor is not None
     assert updated_monitor.status is MonitorStatus.PAUSED
@@ -340,6 +365,7 @@ async def test_nonexistent_monitor_is_not_checked() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     result = await service.run(uuid4())
@@ -377,6 +403,7 @@ async def test_check_is_saved_to_history() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
@@ -421,6 +448,7 @@ async def test_get_history_returns_none_for_nonexistent_monitor() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     history = await service.get_history(
@@ -463,11 +491,15 @@ async def test_third_failure_marks_monitor_down() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert updated_monitor is not None
     assert updated_monitor.status is MonitorStatus.DOWN
@@ -507,6 +539,7 @@ async def test_monitor_down_transition_creates_incident() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
@@ -525,6 +558,8 @@ async def test_monitor_down_transition_creates_incident() -> None:
     assert len(events) == 1
 
     event = events[0]
+
+    assert event.organization_id == monitor.organization_id
 
     assert event.event_type is OutboxEventType.INCIDENT_OPENED
 
@@ -577,6 +612,7 @@ async def test_monitor_recovery_resolves_incident() -> None:
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
@@ -600,6 +636,8 @@ async def test_monitor_recovery_resolves_incident() -> None:
     assert len(events) == 1
 
     event = events[0]
+
+    assert event.organization_id == monitor.organization_id
 
     assert event.event_type is OutboxEventType.INCIDENT_RESOLVED
 
@@ -650,11 +688,15 @@ async def test_failed_check_during_maintenance_does_not_change_monitor_state() -
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     check = await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert check is not None
     assert check.success is False
@@ -739,11 +781,15 @@ async def test_successful_check_during_maintenance_does_not_resolve_incident() -
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     check = await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert check is not None
     assert check.success is True
@@ -810,11 +856,15 @@ async def test_expired_maintenance_does_not_suppress_monitor_transition() -> Non
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     await service.run(monitor.id)
 
-    updated_monitor = await monitor_repository.get_by_id(monitor.id)
+    updated_monitor = await monitor_repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert updated_monitor is not None
     assert updated_monitor.status is MonitorStatus.DOWN

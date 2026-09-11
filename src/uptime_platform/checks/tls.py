@@ -95,6 +95,7 @@ class TlsChecker:
             ssl.SSLError,
             RuntimeError,
             ValueError,
+            TypeError,
         ) as exc:
             response_time_ms = (time.perf_counter() - started_at) * 1000
 

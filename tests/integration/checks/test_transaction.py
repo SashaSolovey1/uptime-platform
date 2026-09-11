@@ -16,6 +16,9 @@ from uptime_platform.monitors.models import MonitorModel
 from uptime_platform.monitors.sqlalchemy_repository import (
     SqlAlchemyMonitorRepository,
 )
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -29,6 +32,7 @@ async def test_check_and_monitor_update_can_be_rolled_back(
 
     model = MonitorModel(
         id=monitor_id,
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="Production API",
         monitor_type=MonitorType.HTTP,
         config={
@@ -47,7 +51,10 @@ async def test_check_and_monitor_update_can_be_rolled_back(
     monitor_repository = SqlAlchemyMonitorRepository(db_session)
     check_repository = SqlAlchemyCheckRepository(db_session)
 
-    monitor = await monitor_repository.get_by_id(monitor_id)
+    monitor = await monitor_repository.get_by_id(
+        model.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert monitor is not None
 

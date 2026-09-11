@@ -12,6 +12,7 @@ from uptime_platform.notifications.exceptions import (
 from uptime_platform.notifications.service import (
     NotificationService,
 )
+from uptime_platform.organizations.constants import DEFAULT_ORGANIZATION_ID
 from uptime_platform.outbox.entities import (
     OutboxEvent,
     OutboxEventType,
@@ -41,6 +42,7 @@ def make_event() -> OutboxEvent:
 
     return OutboxEvent(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         event_type=OutboxEventType.INCIDENT_OPENED,
         payload={
             "incident_id": str(uuid4()),

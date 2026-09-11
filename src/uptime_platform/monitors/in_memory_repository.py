@@ -24,20 +24,34 @@ class InMemoryMonitorRepository:
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[Monitor]:
-        return list(self._monitors.values())
+        return [
+            monitor
+            for monitor in self._monitors.values()
+            if monitor.organization_id == organization_id
+        ]
 
     async def get_by_id(
         self,
         monitor_id: UUID,
+        organization_id: UUID,
     ) -> Monitor | None:
-        return self._monitors.get(monitor_id)
+        monitor = self._monitors.get(monitor_id)
+
+        if monitor is None:
+            return None
+
+        if monitor.organization_id != organization_id:
+            return None
+
+        return monitor
 
     async def get_by_id_for_update(
         self,
         monitor_id: UUID,
     ) -> Monitor | None:
-        return await self.get_by_id(monitor_id)
+        return self._monitors.get(monitor_id)
 
     async def update(
         self,
@@ -53,8 +67,14 @@ class InMemoryMonitorRepository:
     async def delete(
         self,
         monitor_id: UUID,
+        organization_id: UUID,
     ) -> bool:
-        if monitor_id not in self._monitors:
+        monitor = self._monitors.get(monitor_id)
+
+        if monitor is None:
+            return False
+
+        if monitor.organization_id != organization_id:
             return False
 
         del self._monitors[monitor_id]

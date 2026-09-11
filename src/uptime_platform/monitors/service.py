@@ -2,8 +2,11 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from pydantic import ValidationError
+
 from uptime_platform.monitors.entities import (
     DnsMonitorConfig,
+    HttpMethod,
     HttpMonitorConfig,
     IcmpMonitorConfig,
     Monitor,
@@ -11,6 +14,9 @@ from uptime_platform.monitors.entities import (
     MonitorStatus,
     TcpMonitorConfig,
     TlsMonitorConfig,
+)
+from uptime_platform.monitors.exceptions import (
+    InvalidMonitorConfigError,
 )
 from uptime_platform.monitors.protocols import (
     MonitorRepositoryProtocol,
@@ -29,6 +35,22 @@ from uptime_platform.monitors.schemas import (
     TlsMonitorConfigCreate,
     TlsMonitorConfigUpdate,
 )
+
+
+def _validate_update(
+    model: type[
+        HttpMonitorConfigUpdate
+        | TcpMonitorConfigUpdate
+        | DnsMonitorConfigUpdate
+        | TlsMonitorConfigUpdate
+        | IcmpMonitorConfigUpdate
+    ],
+    data: dict[str, object],
+):
+    try:
+        return model.model_validate(data)
+    except ValidationError as exc:
+        raise InvalidMonitorConfigError(str(exc)) from exc
 
 
 def _create_config(
@@ -100,6 +122,19 @@ def _update_config(
     current: MonitorConfig,
     data: dict[str, object],
 ) -> MonitorConfig:
+    try:
+        return _update_config_validated(
+            current=current,
+            data=data,
+        )
+    except ValidationError as exc:
+        raise InvalidMonitorConfigError(str(exc)) from exc
+
+
+def _update_config_validated(
+    current: MonitorConfig,
+    data: dict[str, object],
+) -> MonitorConfig:
     if isinstance(
         current,
         HttpMonitorConfig,
@@ -120,7 +155,7 @@ def _update_config(
         if "body_contains" in update.model_fields_set:
             body_contains = update.body_contains
 
-        return HttpMonitorConfig(
+        updated_config = HttpMonitorConfig(
             url=(str(update.url) if update.url is not None else current.url),
             method=(update.method if update.method is not None else current.method),
             expected_status_codes=expected_status_codes,
@@ -136,6 +171,14 @@ def _update_config(
                 else current.verify_tls
             ),
         )
+
+        if (
+            updated_config.method is HttpMethod.HEAD
+            and updated_config.body_contains is not None
+        ):
+            raise InvalidMonitorConfigError("HEAD monitor cannot use body_contains")
+
+        return updated_config
 
     if isinstance(
         current,
@@ -196,8 +239,10 @@ class MonitorService:
     def __init__(
         self,
         repository: MonitorRepositoryProtocol,
+        organization_id: UUID,
     ) -> None:
         self._repository = repository
+        self._organization_id = organization_id
 
     async def create(
         self,
@@ -207,6 +252,7 @@ class MonitorService:
 
         monitor = Monitor(
             id=uuid4(),
+            organization_id=self._organization_id,
             name=data.name,
             monitor_type=data.monitor_type,
             config=_create_config(data.config),
@@ -224,20 +270,26 @@ class MonitorService:
     async def get_all(
         self,
     ) -> list[Monitor]:
-        return await self._repository.get_all()
+        return await self._repository.get_all(self._organization_id)
 
     async def get_by_id(
         self,
         monitor_id: UUID,
     ) -> Monitor | None:
-        return await self._repository.get_by_id(monitor_id)
+        return await self._repository.get_by_id(
+            monitor_id,
+            self._organization_id,
+        )
 
     async def update(
         self,
         monitor_id: UUID,
         data: MonitorUpdate,
     ) -> Monitor | None:
-        monitor = await self._repository.get_by_id(monitor_id)
+        monitor = await self._repository.get_by_id(
+            monitor_id,
+            self._organization_id,
+        )
 
         if monitor is None:
             return None
@@ -245,10 +297,13 @@ class MonitorService:
         config = monitor.config
 
         if data.config is not None:
-            config = _update_config(
-                current=monitor.config,
-                data=data.config,
-            )
+            try:
+                config = _update_config(
+                    current=monitor.config,
+                    data=data.config,
+                )
+            except ValidationError as exc:
+                raise InvalidMonitorConfigError(str(exc)) from exc
 
         updated_monitor = replace(
             monitor,
@@ -282,4 +337,7 @@ class MonitorService:
         self,
         monitor_id: UUID,
     ) -> bool:
-        return await self._repository.delete(monitor_id)
+        return await self._repository.delete(
+            monitor_id,
+            self._organization_id,
+        )

@@ -9,6 +9,12 @@ from fastapi import (
     status,
 )
 
+from uptime_platform.auth.dependencies import (
+    require_admin,
+)
+from uptime_platform.auth.entities import (
+    OrganizationContext,
+)
 from uptime_platform.notifications.destination_dependencies import (
     get_notification_destination_service,
 )
@@ -40,6 +46,10 @@ async def create_destination(
     service: Annotated[
         NotificationDestinationService,
         Depends(get_notification_destination_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
     ],
 ) -> NotificationDestination:
     return await service.create(data)
@@ -91,6 +101,10 @@ async def update_destination(
         NotificationDestinationService,
         Depends(get_notification_destination_service),
     ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
+    ],
 ) -> NotificationDestination:
     destination = await service.update(
         destination_id,
@@ -115,6 +129,10 @@ async def delete_destination(
     service: Annotated[
         NotificationDestinationService,
         Depends(get_notification_destination_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
     ],
 ) -> Response:
     deleted = await service.delete(destination_id)

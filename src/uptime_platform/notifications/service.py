@@ -87,7 +87,9 @@ class NotificationFanoutService:
         self,
         event: OutboxEvent,
     ) -> list[NotificationDelivery]:
-        destinations = await self._destination_repository.get_enabled()
+        destinations = await self._destination_repository.get_enabled(
+            organization_id=event.organization_id,
+        )
 
         now = datetime.now(UTC)
 

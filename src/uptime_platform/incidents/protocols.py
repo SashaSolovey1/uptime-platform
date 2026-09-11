@@ -26,7 +26,7 @@ class IncidentRepositoryProtocol(Protocol):
     async def get_all(
         self,
         status: IncidentStatus | None,
-        monitor_id: UUID | None,
+        monitor_ids: set[UUID],
         limit: int,
     ) -> list[Incident]: ...
 

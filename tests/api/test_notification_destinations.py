@@ -3,6 +3,12 @@ from collections.abc import AsyncIterator
 import httpx2
 import pytest
 
+from uptime_platform.auth.dependencies import (
+    get_organization_context,
+)
+from uptime_platform.auth.entities import (
+    OrganizationContext,
+)
 from uptime_platform.main import app
 from uptime_platform.notifications.destination_dependencies import (
     get_notification_destination_repository,
@@ -22,7 +28,10 @@ def repository() -> InMemoryNotificationDestinationRepository:
 @pytest.fixture
 async def client(
     repository: InMemoryNotificationDestinationRepository,
+    organization_context: OrganizationContext,
 ) -> AsyncIterator[httpx2.AsyncClient]:
+    app.dependency_overrides[get_organization_context] = lambda: organization_context
+
     def override_repository() -> InMemoryNotificationDestinationRepository:
         return repository
 
@@ -30,7 +39,9 @@ async def client(
         override_repository
     )
 
-    transport = httpx2.ASGITransport(app=app)
+    transport = httpx2.ASGITransport(
+        app=app,
+    )
 
     async with httpx2.AsyncClient(
         transport=transport,
@@ -66,13 +77,14 @@ async def test_create_notification_destination(
     assert data["enabled"] is True
 
     assert data["config"]["url"] == "https://example.com/webhook"
+
     assert "secret" not in data["config"]
 
 
 async def test_list_notification_destinations(
     client: httpx2.AsyncClient,
 ) -> None:
-    await client.post(
+    create_response = await client.post(
         "/api/v1/notification-destinations",
         json={
             "name": "Production webhook",
@@ -84,6 +96,8 @@ async def test_list_notification_destinations(
         },
     )
 
+    assert create_response.status_code == 201
+
     response = await client.get("/api/v1/notification-destinations")
 
     assert response.status_code == 200
@@ -92,7 +106,9 @@ async def test_list_notification_destinations(
 
     assert len(data) == 1
     assert data[0]["name"] == "Production webhook"
+
     assert data[0]["config"]["url"] == "https://example.com/webhook"
+
     assert "secret" not in data[0]["config"]
 
 
@@ -110,6 +126,8 @@ async def test_update_notification_destination(
             },
         },
     )
+
+    assert create_response.status_code == 201
 
     destination_id = create_response.json()["id"]
 
@@ -144,6 +162,8 @@ async def test_delete_notification_destination(
         },
     )
 
+    assert create_response.status_code == 201
+
     destination_id = create_response.json()["id"]
 
     response = await client.delete(
@@ -167,7 +187,7 @@ async def test_create_telegram_destination(
             "destination_type": "telegram",
             "enabled": True,
             "config": {
-                "bot_token": ("123456789:test-bot-token"),
+                "bot_token": "123456789:test-bot-token",
                 "chat_id": "-1001234567890",
             },
         },

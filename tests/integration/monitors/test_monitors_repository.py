@@ -1,6 +1,6 @@
 from dataclasses import replace
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +18,12 @@ from uptime_platform.monitors.models import MonitorModel
 from uptime_platform.monitors.sqlalchemy_repository import (
     SqlAlchemyMonitorRepository,
 )
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
+from uptime_platform.organizations.models import (
+    OrganizationModel,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -29,11 +35,13 @@ def repository(db_session: AsyncSession) -> SqlAlchemyMonitorRepository:
 
 def make_monitor(
     status: MonitorStatus = MonitorStatus.PENDING,
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
 ) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
+        organization_id=organization_id,
         name="Production API",
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(
@@ -79,6 +87,7 @@ async def test_get_monitor_by_id(
 
     model = MonitorModel(
         id=monitor_id,
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="Production API",
         monitor_type=MonitorType.HTTP,
         config={
@@ -96,7 +105,10 @@ async def test_get_monitor_by_id(
 
     db_session.expunge_all()
 
-    monitor = await repository.get_by_id(monitor_id)
+    monitor = await repository.get_by_id(
+        monitor_id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert monitor is not None
     assert monitor.id == monitor_id
@@ -119,8 +131,10 @@ async def test_get_monitor_by_id(
 async def test_get_nonexistent_monitor_returns_none(
     repository: SqlAlchemyMonitorRepository,
 ) -> None:
-    monitor = await repository.get_by_id(uuid4())
-
+    monitor = await repository.get_by_id(
+        uuid4(),
+        DEFAULT_ORGANIZATION_ID,
+    )
     assert monitor is None
 
 
@@ -143,7 +157,10 @@ async def test_update_monitor(
     assert result.name == "Updated API"
     assert result.timeout_seconds == 15
 
-    found_monitor = await repository.get_by_id(monitor.id)
+    found_monitor = await repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert found_monitor is not None
     assert found_monitor.name == "Updated API"
@@ -157,11 +174,17 @@ async def test_delete_monitor(
 
     await repository.create(monitor)
 
-    deleted = await repository.delete(monitor.id)
+    deleted = await repository.delete(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert deleted is True
 
-    found_monitor = await repository.get_by_id(monitor.id)
+    found_monitor = await repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert found_monitor is None
 
@@ -182,7 +205,7 @@ async def test_get_all_monitors(
     await repository.create(first)
     await repository.create(second)
 
-    monitors = await repository.get_all()
+    monitors = await repository.get_all(DEFAULT_ORGANIZATION_ID)
 
     assert len(monitors) == 2
 
@@ -202,6 +225,7 @@ async def test_tcp_monitor_round_trip(
 
     monitor = Monitor(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="PostgreSQL",
         monitor_type=MonitorType.TCP,
         config=TcpMonitorConfig(
@@ -232,7 +256,10 @@ async def test_tcp_monitor_round_trip(
         "port": 5432,
     }
 
-    found_monitor = await repository.get_by_id(monitor.id)
+    found_monitor = await repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert found_monitor is not None
     assert found_monitor.monitor_type is MonitorType.TCP
@@ -254,6 +281,7 @@ async def test_dns_monitor_round_trip(
 
     monitor = Monitor(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         name="Example DNS",
         monitor_type=MonitorType.DNS,
         config=DnsMonitorConfig(
@@ -284,7 +312,10 @@ async def test_dns_monitor_round_trip(
         "record_type": "A",
     }
 
-    found_monitor = await repository.get_by_id(monitor.id)
+    found_monitor = await repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
 
     assert found_monitor is not None
     assert found_monitor.monitor_type is MonitorType.DNS
@@ -296,3 +327,65 @@ async def test_dns_monitor_round_trip(
 
     assert found_monitor.config.host == "example.com"
     assert found_monitor.config.record_type is DnsRecordType.A
+
+
+async def test_get_monitor_does_not_return_monitor_from_another_organization(
+    repository: SqlAlchemyMonitorRepository,
+    db_session: AsyncSession,
+) -> None:
+    other_organization_id = uuid4()
+
+    db_session.add(
+        OrganizationModel(
+            id=other_organization_id,
+            name="Other Organization",
+            created_at=datetime.now(UTC),
+        )
+    )
+
+    await db_session.flush()
+
+    monitor = replace(
+        make_monitor(),
+        organization_id=other_organization_id,
+    )
+
+    await repository.create(monitor)
+
+    found = await repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
+
+    assert found is None
+
+
+async def test_get_monitor_from_another_organization_returns_none(
+    repository: SqlAlchemyMonitorRepository,
+    db_session: AsyncSession,
+) -> None:
+    other_organization_id = uuid4()
+
+    db_session.add(
+        OrganizationModel(
+            id=other_organization_id,
+            name="Other Organization",
+            created_at=datetime.now(UTC),
+        )
+    )
+
+    await db_session.flush()
+
+    monitor = replace(
+        make_monitor(),
+        organization_id=other_organization_id,
+    )
+
+    await repository.create(monitor)
+
+    found = await repository.get_by_id(
+        monitor.id,
+        DEFAULT_ORGANIZATION_ID,
+    )
+
+    assert found is None

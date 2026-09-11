@@ -26,6 +26,9 @@ from uptime_platform.monitors.schemas import (
     TlsMonitorConfigCreate,
 )
 from uptime_platform.monitors.service import MonitorService
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -34,7 +37,10 @@ pytestmark = pytest.mark.anyio
 def service() -> MonitorService:
     repository = InMemoryMonitorRepository()
 
-    return MonitorService(repository)
+    return MonitorService(
+        repository=repository,
+        organization_id=DEFAULT_ORGANIZATION_ID,
+    )
 
 
 @pytest.fixture

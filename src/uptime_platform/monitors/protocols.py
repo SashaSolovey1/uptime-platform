@@ -11,11 +11,15 @@ class MonitorRepositoryProtocol(Protocol):
         monitor: Monitor,
     ) -> Monitor: ...
 
-    async def get_all(self) -> list[Monitor]: ...
+    async def get_all(
+        self,
+        organization_id: UUID,
+    ) -> list[Monitor]: ...
 
     async def get_by_id(
         self,
         monitor_id: UUID,
+        organization_id: UUID,
     ) -> Monitor | None: ...
 
     async def update(
@@ -26,6 +30,7 @@ class MonitorRepositoryProtocol(Protocol):
     async def delete(
         self,
         monitor_id: UUID,
+        organization_id: UUID,
     ) -> bool: ...
 
     async def get_due(

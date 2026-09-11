@@ -48,6 +48,15 @@ class HttpMonitorConfigCreate(BaseModel):
     follow_redirects: bool = False
     verify_tls: bool = True
 
+    @model_validator(mode="after")
+    def validate_body_check(
+        self,
+    ) -> "HttpMonitorConfigCreate":
+        if self.method is HttpMethod.HEAD and self.body_contains is not None:
+            raise ValueError("HEAD monitor cannot use body_contains")
+
+        return self
+
 
 class TcpMonitorConfigCreate(BaseModel):
     model_config = ConfigDict(

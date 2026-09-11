@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from uptime_platform.organizations.constants import DEFAULT_ORGANIZATION_ID
 from uptime_platform.outbox.entities import (
     OutboxEvent,
     OutboxEventType,
@@ -36,6 +37,7 @@ async def clean_outbox(
 def make_event() -> OutboxEvent:
     return OutboxEvent(
         id=uuid4(),
+        organization_id=DEFAULT_ORGANIZATION_ID,
         event_type=OutboxEventType.INCIDENT_OPENED,
         payload={
             "incident_id": str(uuid4()),

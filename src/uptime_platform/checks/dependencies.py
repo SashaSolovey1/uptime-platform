@@ -3,6 +3,12 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from uptime_platform.auth.dependencies import (
+    get_organization_context,
+)
+from uptime_platform.auth.entities import (
+    OrganizationContext,
+)
 from uptime_platform.checks.factory import (
     CheckerFactory,
 )
@@ -75,6 +81,10 @@ def get_check_service(
         CheckerFactoryProtocol,
         Depends(get_checker_factory),
     ],
+    context: Annotated[
+        OrganizationContext,
+        Depends(get_organization_context),
+    ],
 ) -> CheckService:
     return CheckService(
         monitor_repository=monitor_repository,
@@ -83,4 +93,5 @@ def get_check_service(
         outbox_repository=outbox_repository,
         maintenance_repository=maintenance_repository,
         checker_factory=checker_factory,
+        organization_id=context.organization.id,
     )

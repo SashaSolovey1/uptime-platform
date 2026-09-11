@@ -20,7 +20,7 @@ class MaintenanceWindowRepositoryProtocol(Protocol):
 
     async def get_all(
         self,
-        monitor_id: UUID | None = None,
+        monitor_ids: set[UUID],
     ) -> list[MaintenanceWindow]: ...
 
     async def get_active(

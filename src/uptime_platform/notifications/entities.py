@@ -47,6 +47,7 @@ type NotificationDestinationConfig = (
 @dataclass(frozen=True, slots=True)
 class NotificationDestination:
     id: UUID
+    organization_id: UUID
     name: str
     destination_type: NotificationDestinationType
     enabled: bool

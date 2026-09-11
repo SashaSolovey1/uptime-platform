@@ -1,7 +1,12 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, String, Uuid
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    String,
+    Uuid,
+)
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,6 +25,16 @@ class MonitorModel(Base):
         Uuid(as_uuid=True),
         primary_key=True,
         default=uuid4,
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey(
+            "organizations.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
     )
 
     name: Mapped[str] = mapped_column(

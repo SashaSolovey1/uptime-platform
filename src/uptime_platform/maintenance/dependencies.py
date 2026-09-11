@@ -3,6 +3,12 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from uptime_platform.auth.dependencies import (
+    get_organization_context,
+)
+from uptime_platform.auth.entities import (
+    OrganizationContext,
+)
 from uptime_platform.db.session import get_db_session
 from uptime_platform.maintenance.protocols import (
     MaintenanceWindowRepositoryProtocol,
@@ -35,6 +41,10 @@ def get_maintenance_service(
         AsyncSession,
         Depends(get_db_session),
     ],
+    context: Annotated[
+        OrganizationContext,
+        Depends(get_organization_context),
+    ],
 ) -> MaintenanceWindowService:
     maintenance_repository = SqlAlchemyMaintenanceWindowRepository(session)
 
@@ -43,4 +53,5 @@ def get_maintenance_service(
     return MaintenanceWindowService(
         repository=maintenance_repository,
         monitor_repository=monitor_repository,
+        organization_id=context.organization.id,
     )

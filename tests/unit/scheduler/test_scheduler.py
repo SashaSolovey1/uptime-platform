@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -14,6 +14,10 @@ from uptime_platform.monitors.entities import (
 from uptime_platform.scheduler.scheduler import Scheduler
 
 pytestmark = pytest.mark.anyio
+
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
 
 
 class FakeSession:
@@ -39,11 +43,13 @@ def fake_session_factory() -> FakeSession:
 
 def make_monitor(
     status: MonitorStatus = MonitorStatus.PENDING,
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
 ) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
+        organization_id=organization_id,
         name="Test monitor",
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(

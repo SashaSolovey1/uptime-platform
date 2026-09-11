@@ -16,26 +16,29 @@ class StatusPageRepositoryProtocol(Protocol):
     async def get_by_id(
         self,
         page_id: UUID,
+        organization_id: UUID,
     ) -> StatusPage | None: ...
+
+    async def get_all(
+        self,
+        organization_id: UUID,
+    ) -> list[StatusPage]: ...
+
+    async def delete(
+        self,
+        page_id: UUID,
+        organization_id: UUID,
+    ) -> bool: ...
 
     async def get_by_slug(
         self,
         slug: str,
     ) -> StatusPage | None: ...
 
-    async def get_all(
-        self,
-    ) -> list[StatusPage]: ...
-
     async def update(
         self,
         page: StatusPage,
     ) -> StatusPage | None: ...
-
-    async def delete(
-        self,
-        page_id: UUID,
-    ) -> bool: ...
 
     async def add_monitor(
         self,

@@ -45,6 +45,7 @@ class CheckService:
         outbox_repository: OutboxRepositoryProtocol,
         checker_factory: CheckerFactoryProtocol,
         maintenance_repository: MaintenanceWindowRepositoryProtocol,
+        organization_id: UUID,
     ) -> None:
         self._monitor_repository = monitor_repository
         self._check_repository = check_repository
@@ -52,12 +53,16 @@ class CheckService:
         self._outbox_repository = outbox_repository
         self._checker_factory = checker_factory
         self._maintenance_repository = maintenance_repository
+        self._organization_id = organization_id
 
     async def run(
         self,
         monitor_id: UUID,
     ) -> Check | None:
-        monitor = await self._monitor_repository.get_by_id(monitor_id)
+        monitor = await self._monitor_repository.get_by_id(
+            monitor_id,
+            self._organization_id,
+        )
 
         if monitor is None:
             return None
@@ -78,7 +83,10 @@ class CheckService:
         monitor_id: UUID,
         limit: int,
     ) -> list[Check] | None:
-        monitor = await self._monitor_repository.get_by_id(monitor_id)
+        monitor = await self._monitor_repository.get_by_id(
+            monitor_id,
+            self._organization_id,
+        )
 
         if monitor is None:
             return None
@@ -138,6 +146,7 @@ class CheckService:
             previous_status=monitor.status,
             current_status=updated_monitor.status,
             monitor_id=monitor.id,
+            organization_id=monitor.organization_id,
             checked_at=check.checked_at,
         )
 
@@ -148,6 +157,7 @@ class CheckService:
         previous_status: MonitorStatus,
         current_status: MonitorStatus,
         monitor_id: UUID,
+        organization_id: UUID,
         checked_at: datetime,
     ) -> None:
         if (
@@ -166,7 +176,8 @@ class CheckService:
 
             event = OutboxEvent(
                 id=uuid4(),
-                event_type=(OutboxEventType.INCIDENT_OPENED),
+                organization_id=organization_id,
+                event_type=OutboxEventType.INCIDENT_OPENED,
                 payload={
                     "incident_id": str(incident.id),
                     "monitor_id": str(monitor_id),
@@ -195,7 +206,8 @@ class CheckService:
 
             event = OutboxEvent(
                 id=uuid4(),
-                event_type=(OutboxEventType.INCIDENT_RESOLVED),
+                organization_id=organization_id,
+                event_type=OutboxEventType.INCIDENT_RESOLVED,
                 payload={
                     "incident_id": str(resolved_incident.id),
                     "monitor_id": str(monitor_id),

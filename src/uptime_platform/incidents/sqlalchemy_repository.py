@@ -53,24 +53,24 @@ class SqlAlchemyIncidentRepository:
     async def get_all(
         self,
         status: IncidentStatus | None,
-        monitor_id: UUID | None,
+        monitor_ids: set[UUID],
         limit: int,
     ) -> list[Incident]:
-        statement = select(IncidentModel)
+        if not monitor_ids:
+            return []
+
+        statement = select(IncidentModel).where(
+            IncidentModel.monitor_id.in_(monitor_ids)
+        )
 
         if status is not None:
             statement = statement.where(IncidentModel.status == status)
-
-        if monitor_id is not None:
-            statement = statement.where(IncidentModel.monitor_id == monitor_id)
 
         statement = statement.order_by(IncidentModel.started_at.desc()).limit(limit)
 
         result = await self._session.execute(statement)
 
-        models = result.scalars().all()
-
-        return [self._to_entity(model) for model in models]
+        return [self._to_entity(model) for model in result.scalars().all()]
 
     async def get_open_by_monitor_id(
         self,

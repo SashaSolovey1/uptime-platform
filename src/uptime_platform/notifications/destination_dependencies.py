@@ -3,6 +3,8 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from uptime_platform.auth.dependencies import get_organization_context
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.db.session import get_db_session
 from uptime_platform.notifications.destination_service import (
     NotificationDestinationService,
@@ -29,5 +31,12 @@ def get_notification_destination_service(
         NotificationDestinationRepositoryProtocol,
         Depends(get_notification_destination_repository),
     ],
+    context: Annotated[
+        OrganizationContext,
+        Depends(get_organization_context),
+    ],
 ) -> NotificationDestinationService:
-    return NotificationDestinationService(repository)
+    return NotificationDestinationService(
+        repository=repository,
+        organization_id=context.organization.id,
+    )

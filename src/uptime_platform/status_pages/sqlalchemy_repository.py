@@ -27,6 +27,7 @@ class SqlAlchemyStatusPageRepository:
     ) -> StatusPage:
         model = StatusPageModel(
             id=page.id,
+            organization_id=page.organization_id,
             name=page.name,
             slug=page.slug,
             published=page.published,
@@ -42,11 +43,16 @@ class SqlAlchemyStatusPageRepository:
     async def get_by_id(
         self,
         page_id: UUID,
+        organization_id: UUID,
     ) -> StatusPage | None:
-        model = await self._session.get(
-            StatusPageModel,
-            page_id,
+        statement = select(StatusPageModel).where(
+            StatusPageModel.id == page_id,
+            StatusPageModel.organization_id == organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return None
@@ -70,8 +76,13 @@ class SqlAlchemyStatusPageRepository:
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[StatusPage]:
-        statement = select(StatusPageModel).order_by(StatusPageModel.created_at.desc())
+        statement = (
+            select(StatusPageModel)
+            .where(StatusPageModel.organization_id == organization_id)
+            .order_by(StatusPageModel.created_at.desc())
+        )
 
         result = await self._session.execute(statement)
 
@@ -81,10 +92,14 @@ class SqlAlchemyStatusPageRepository:
         self,
         page: StatusPage,
     ) -> StatusPage | None:
-        model = await self._session.get(
-            StatusPageModel,
-            page.id,
+        statement = select(StatusPageModel).where(
+            StatusPageModel.id == page.id,
+            StatusPageModel.organization_id == page.organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return None
@@ -99,11 +114,16 @@ class SqlAlchemyStatusPageRepository:
     async def delete(
         self,
         page_id: UUID,
+        organization_id: UUID,
     ) -> bool:
-        model = await self._session.get(
-            StatusPageModel,
-            page_id,
+        statement = select(StatusPageModel).where(
+            StatusPageModel.id == page_id,
+            StatusPageModel.organization_id == organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return False
@@ -181,6 +201,7 @@ class SqlAlchemyStatusPageRepository:
     ) -> StatusPage:
         return StatusPage(
             id=model.id,
+            organization_id=model.organization_id,
             name=model.name,
             slug=model.slug,
             published=model.published,

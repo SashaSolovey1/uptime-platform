@@ -14,6 +14,7 @@ class StatusPageStatus(StrEnum):
 @dataclass(frozen=True, slots=True)
 class StatusPage:
     id: UUID
+    organization_id: UUID
     name: str
     slug: str
     published: bool

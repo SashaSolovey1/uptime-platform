@@ -24,6 +24,7 @@ class SqlAlchemyOutboxRepository:
     ) -> OutboxEvent:
         model = OutboxEventModel(
             id=event.id,
+            organization_id=event.organization_id,
             event_type=event.event_type,
             payload=event.payload,
             created_at=event.created_at,
@@ -92,6 +93,7 @@ class SqlAlchemyOutboxRepository:
     ) -> OutboxEvent:
         return OutboxEvent(
             id=model.id,
+            organization_id=model.organization_id,
             event_type=model.event_type,
             payload=model.payload,
             created_at=model.created_at,

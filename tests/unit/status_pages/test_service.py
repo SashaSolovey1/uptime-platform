@@ -1,11 +1,14 @@
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from uptime_platform.monitors.entities import (
     HttpMonitorConfig,
     Monitor,
     MonitorStatus,
     MonitorType,
+)
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
 )
 from uptime_platform.status_pages.entities import (
     StatusPageStatus,
@@ -17,11 +20,13 @@ from uptime_platform.status_pages.service import (
 
 def make_monitor(
     status: MonitorStatus,
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
 ) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
+        organization_id=organization_id,
         name="API",
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(

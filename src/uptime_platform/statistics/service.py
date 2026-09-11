@@ -26,9 +26,11 @@ class StatisticsService:
         self,
         repository: StatisticsRepositoryProtocol,
         monitor_repository: MonitorRepositoryProtocol,
+        organization_id: UUID,
     ) -> None:
         self._repository = repository
         self._monitor_repository = monitor_repository
+        self._organization_id = organization_id
 
     async def get_monitor_statistics(
         self,
@@ -37,7 +39,10 @@ class StatisticsService:
         starts_at: datetime | None = None,
         ends_at: datetime | None = None,
     ) -> MonitorStatistics | None:
-        monitor = await self._monitor_repository.get_by_id(monitor_id)
+        monitor = await self._monitor_repository.get_by_id(
+            monitor_id,
+            self._organization_id,
+        )
 
         if monitor is None:
             return None

@@ -12,6 +12,7 @@ class OutboxEventType(StrEnum):
 @dataclass(frozen=True, slots=True)
 class OutboxEvent:
     id: UUID
+    organization_id: UUID
     event_type: OutboxEventType
     payload: dict[str, str]
     created_at: datetime

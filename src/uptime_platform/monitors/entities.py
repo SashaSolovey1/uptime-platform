@@ -78,19 +78,16 @@ type MonitorConfig = (
 @dataclass(frozen=True, slots=True)
 class Monitor:
     id: UUID
+    organization_id: UUID
     name: str
-
     monitor_type: MonitorType
     config: MonitorConfig
-
     interval_seconds: int
     timeout_seconds: int
     status: MonitorStatus
     created_at: datetime
     next_check_at: datetime
-
     failure_threshold: int = 3
     recovery_threshold: int = 2
-
     consecutive_failures: int = 0
     consecutive_successes: int = 0

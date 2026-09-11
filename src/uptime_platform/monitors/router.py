@@ -3,8 +3,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from uptime_platform.auth.dependencies import (
+    require_member,
+)
+from uptime_platform.auth.entities import (
+    OrganizationContext,
+)
 from uptime_platform.monitors.dependencies import get_monitor_service
 from uptime_platform.monitors.entities import Monitor
+from uptime_platform.monitors.exceptions import InvalidMonitorConfigError
 from uptime_platform.monitors.schemas import (
     MonitorCreate,
     MonitorResponse,
@@ -28,6 +35,10 @@ async def create_monitor(
     service: Annotated[
         MonitorService,
         Depends(get_monitor_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_member),
     ],
 ) -> Monitor:
     return await service.create(monitor)
@@ -79,11 +90,21 @@ async def update_monitor(
         MonitorService,
         Depends(get_monitor_service),
     ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_member),
+    ],
 ) -> Monitor:
-    monitor = await service.update(
-        monitor_id,
-        data,
-    )
+    try:
+        monitor = await service.update(
+            monitor_id,
+            data,
+        )
+    except InvalidMonitorConfigError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(exc),
+        ) from exc
 
     if monitor is None:
         raise HTTPException(
@@ -103,6 +124,10 @@ async def delete_monitor(
     service: Annotated[
         MonitorService,
         Depends(get_monitor_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_member),
     ],
 ) -> None:
     deleted = await service.delete(monitor_id)

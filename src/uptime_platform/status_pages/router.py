@@ -9,7 +9,10 @@ from fastapi import (
     status,
 )
 
+from uptime_platform.auth.dependencies import require_admin
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.status_pages.dependencies import (
+    get_public_status_page_service,
     get_status_page_service,
 )
 from uptime_platform.status_pages.schemas import (
@@ -19,6 +22,7 @@ from uptime_platform.status_pages.schemas import (
     StatusPageUpdate,
 )
 from uptime_platform.status_pages.service import (
+    PublicStatusPageService,
     StatusPageService,
 )
 
@@ -35,6 +39,10 @@ async def create_status_page(
     service: Annotated[
         StatusPageService,
         Depends(get_status_page_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
     ],
 ) -> StatusPageResponse:
     page = await service.create(data)
@@ -114,6 +122,10 @@ async def update_status_page(
         StatusPageService,
         Depends(get_status_page_service),
     ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
+    ],
 ) -> StatusPageResponse:
     page = await service.update(
         page_id,
@@ -144,6 +156,10 @@ async def delete_status_page(
         StatusPageService,
         Depends(get_status_page_service),
     ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
+    ],
 ) -> Response:
     deleted = await service.delete(page_id)
 
@@ -166,6 +182,10 @@ async def add_monitor_to_status_page(
     service: Annotated[
         StatusPageService,
         Depends(get_status_page_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
     ],
 ) -> Response:
     result = await service.add_monitor(
@@ -199,6 +219,10 @@ async def remove_monitor_from_status_page(
         StatusPageService,
         Depends(get_status_page_service),
     ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_admin),
+    ],
 ) -> Response:
     removed = await service.remove_monitor(
         page_id,
@@ -221,11 +245,11 @@ async def remove_monitor_from_status_page(
 async def get_public_status_page(
     slug: str,
     service: Annotated[
-        StatusPageService,
-        Depends(get_status_page_service),
+        PublicStatusPageService,
+        Depends(get_public_status_page_service),
     ],
 ) -> PublicStatusPageResponse:
-    page = await service.get_public(slug)
+    page = await service.get(slug)
 
     if page is None:
         raise HTTPException(

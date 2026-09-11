@@ -40,19 +40,18 @@ class InMemoryIncidentRepository:
     async def get_all(
         self,
         status: IncidentStatus | None,
-        monitor_id: UUID | None,
+        monitor_ids: set[UUID],
         limit: int,
     ) -> list[Incident]:
-        incidents = list(self._incidents.values())
+        incidents = [
+            incident
+            for incident in self._incidents.values()
+            if incident.monitor_id in monitor_ids
+        ]
 
         if status is not None:
             incidents = [
                 incident for incident in incidents if incident.status is status
-            ]
-
-        if monitor_id is not None:
-            incidents = [
-                incident for incident in incidents if incident.monitor_id == monitor_id
             ]
 
         incidents.sort(

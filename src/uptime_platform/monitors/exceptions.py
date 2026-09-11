@@ -1,0 +1,2 @@
+class InvalidMonitorConfigError(ValueError):
+    pass

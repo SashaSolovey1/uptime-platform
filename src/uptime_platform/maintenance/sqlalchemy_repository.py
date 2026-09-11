@@ -55,14 +55,16 @@ class SqlAlchemyMaintenanceWindowRepository:
 
     async def get_all(
         self,
-        monitor_id: UUID | None = None,
+        monitor_ids: set[UUID],
     ) -> list[MaintenanceWindow]:
-        statement = select(MaintenanceWindowModel)
+        if not monitor_ids:
+            return []
 
-        if monitor_id is not None:
-            statement = statement.where(MaintenanceWindowModel.monitor_id == monitor_id)
-
-        statement = statement.order_by(MaintenanceWindowModel.starts_at.desc())
+        statement = (
+            select(MaintenanceWindowModel)
+            .where(MaintenanceWindowModel.monitor_id.in_(monitor_ids))
+            .order_by(MaintenanceWindowModel.starts_at.desc())
+        )
 
         result = await self._session.execute(statement)
 

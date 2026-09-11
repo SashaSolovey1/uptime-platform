@@ -53,9 +53,11 @@ class StatusPageService:
         self,
         repository: StatusPageRepositoryProtocol,
         monitor_repository: MonitorRepositoryProtocol,
+        organization_id: UUID,
     ) -> None:
         self._repository = repository
         self._monitor_repository = monitor_repository
+        self._organization_id = organization_id
 
     async def create(
         self,
@@ -68,6 +70,7 @@ class StatusPageService:
 
         page = StatusPage(
             id=uuid4(),
+            organization_id=self._organization_id,
             name=data.name,
             slug=data.slug,
             published=data.published,
@@ -79,20 +82,26 @@ class StatusPageService:
     async def get_all(
         self,
     ) -> list[StatusPage]:
-        return await self._repository.get_all()
+        return await self._repository.get_all(self._organization_id)
 
     async def get(
         self,
         page_id: UUID,
     ) -> StatusPage | None:
-        return await self._repository.get_by_id(page_id)
+        return await self._repository.get_by_id(
+            page_id,
+            self._organization_id,
+        )
 
     async def update(
         self,
         page_id: UUID,
         data: StatusPageUpdate,
     ) -> StatusPage | None:
-        page = await self._repository.get_by_id(page_id)
+        page = await self._repository.get_by_id(
+            page_id,
+            self._organization_id,
+        )
 
         if page is None:
             return None
@@ -110,21 +119,33 @@ class StatusPageService:
         self,
         page_id: UUID,
     ) -> bool:
-        return await self._repository.delete(page_id)
+        return await self._repository.delete(
+            page_id,
+            self._organization_id,
+        )
 
     async def add_monitor(
         self,
         page_id: UUID,
         monitor_id: UUID,
     ) -> bool | None:
-        page = await self._repository.get_by_id(page_id)
+        page = await self._repository.get_by_id(
+            page_id,
+            self._organization_id,
+        )
 
         if page is None:
             return None
 
-        monitor = await self._monitor_repository.get_by_id(monitor_id)
+        monitor = await self._monitor_repository.get_by_id(
+            monitor_id,
+            self._organization_id,
+        )
 
         if monitor is None:
+            return None
+
+        if monitor.organization_id != page.organization_id:
             return None
 
         existing = await self._repository.get_monitors(page_id)
@@ -142,12 +163,30 @@ class StatusPageService:
         page_id: UUID,
         monitor_id: UUID,
     ) -> bool:
+        page = await self._repository.get_by_id(
+            page_id,
+            self._organization_id,
+        )
+
+        if page is None:
+            return False
+
         return await self._repository.remove_monitor(
             page_id,
             monitor_id,
         )
 
-    async def get_public(
+
+class PublicStatusPageService:
+    def __init__(
+        self,
+        repository: StatusPageRepositoryProtocol,
+        monitor_repository: MonitorRepositoryProtocol,
+    ) -> None:
+        self._repository = repository
+        self._monitor_repository = monitor_repository
+
+    async def get(
         self,
         slug: str,
     ) -> PublicStatusPageResponse | None:
@@ -161,7 +200,10 @@ class StatusPageService:
         monitors: list[Monitor] = []
 
         for relation in relations:
-            monitor = await self._monitor_repository.get_by_id(relation.monitor_id)
+            monitor = await self._monitor_repository.get_by_id(
+                relation.monitor_id,
+                page.organization_id,
+            )
 
             if monitor is not None:
                 monitors.append(monitor)

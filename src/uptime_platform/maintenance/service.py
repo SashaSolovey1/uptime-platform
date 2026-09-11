@@ -20,15 +20,20 @@ class MaintenanceWindowService:
         self,
         repository: MaintenanceWindowRepositoryProtocol,
         monitor_repository: MonitorRepositoryProtocol,
+        organization_id: UUID,
     ) -> None:
         self._repository = repository
         self._monitor_repository = monitor_repository
+        self._organization_id = organization_id
 
     async def create(
         self,
         data: MaintenanceWindowCreate,
     ) -> MaintenanceWindow | None:
-        monitor = await self._monitor_repository.get_by_id(data.monitor_id)
+        monitor = await self._monitor_repository.get_by_id(
+            data.monitor_id,
+            self._organization_id,
+        )
 
         if monitor is None:
             return None
@@ -48,16 +53,44 @@ class MaintenanceWindowService:
         self,
         monitor_id: UUID | None = None,
     ) -> list[MaintenanceWindow]:
-        return await self._repository.get_all(monitor_id=monitor_id)
+        monitors = await self._monitor_repository.get_all(self._organization_id)
+
+        monitor_ids = {monitor.id for monitor in monitors}
+
+        if monitor_id is not None:
+            if monitor_id not in monitor_ids:
+                return []
+
+            monitor_ids = {monitor_id}
+
+        return await self._repository.get_all(monitor_ids=monitor_ids)
 
     async def get(
         self,
         window_id: UUID,
     ) -> MaintenanceWindow | None:
-        return await self._repository.get_by_id(window_id)
+        window = await self._repository.get_by_id(window_id)
+
+        if window is None:
+            return None
+
+        monitor = await self._monitor_repository.get_by_id(
+            window.monitor_id,
+            self._organization_id,
+        )
+
+        if monitor is None:
+            return None
+
+        return window
 
     async def delete(
         self,
         window_id: UUID,
     ) -> bool:
+        window = await self.get(window_id)
+
+        if window is None:
+            return False
+
         return await self._repository.delete(window_id)

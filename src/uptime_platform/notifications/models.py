@@ -29,6 +29,16 @@ class NotificationDestinationModel(Base):
         primary_key=True,
     )
 
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey(
+            "organizations.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
     name: Mapped[str] = mapped_column(
         String(100),
         nullable=False,

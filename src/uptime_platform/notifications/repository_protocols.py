@@ -17,24 +17,28 @@ class NotificationDestinationRepositoryProtocol(Protocol):
     async def get_by_id(
         self,
         destination_id: UUID,
+        organization_id: UUID,
     ) -> NotificationDestination | None: ...
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[NotificationDestination]: ...
+
+    async def delete(
+        self,
+        destination_id: UUID,
+        organization_id: UUID,
+    ) -> bool: ...
 
     async def update(
         self,
         destination: NotificationDestination,
     ) -> NotificationDestination | None: ...
 
-    async def delete(
-        self,
-        destination_id: UUID,
-    ) -> bool: ...
-
     async def get_enabled(
         self,
+        organization_id: UUID,
     ) -> list[NotificationDestination]: ...
 
 
@@ -70,4 +74,5 @@ class NotificationDeliveryRepositoryProtocol(Protocol):
     async def release_lock(
         self,
         delivery_id: UUID,
-    ) -> None: ...
+        locked_until: datetime,
+    ) -> bool: ...

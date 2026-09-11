@@ -10,6 +10,8 @@ from fastapi import (
     status,
 )
 
+from uptime_platform.auth.dependencies import require_member
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.maintenance.dependencies import (
     get_maintenance_service,
 )
@@ -37,6 +39,10 @@ async def create_maintenance_window(
     service: Annotated[
         MaintenanceWindowService,
         Depends(get_maintenance_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_member),
     ],
 ) -> MaintenanceWindowResponse:
     window = await service.create(data)
@@ -100,6 +106,10 @@ async def delete_maintenance_window(
     service: Annotated[
         MaintenanceWindowService,
         Depends(get_maintenance_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_member),
     ],
 ) -> Response:
     deleted = await service.delete(window_id)

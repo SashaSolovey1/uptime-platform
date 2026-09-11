@@ -138,8 +138,10 @@ class NotificationDestinationService:
     def __init__(
         self,
         repository: NotificationDestinationRepositoryProtocol,
+        organization_id: UUID,
     ) -> None:
         self._repository = repository
+        self._organization_id = organization_id
 
     async def create(
         self,
@@ -147,6 +149,7 @@ class NotificationDestinationService:
     ) -> NotificationDestination:
         destination = NotificationDestination(
             id=uuid4(),
+            organization_id=self._organization_id,
             name=data.name,
             destination_type=data.destination_type,
             enabled=data.enabled,
@@ -159,20 +162,26 @@ class NotificationDestinationService:
     async def get_all(
         self,
     ) -> list[NotificationDestination]:
-        return await self._repository.get_all()
+        return await self._repository.get_all(self._organization_id)
 
     async def get_by_id(
         self,
         destination_id: UUID,
     ) -> NotificationDestination | None:
-        return await self._repository.get_by_id(destination_id)
+        return await self._repository.get_by_id(
+            destination_id,
+            self._organization_id,
+        )
 
     async def update(
         self,
         destination_id: UUID,
         data: NotificationDestinationUpdate,
     ) -> NotificationDestination | None:
-        destination = await self._repository.get_by_id(destination_id)
+        destination = await self._repository.get_by_id(
+            destination_id,
+            self._organization_id,
+        )
 
         if destination is None:
             return None
@@ -198,4 +207,7 @@ class NotificationDestinationService:
         self,
         destination_id: UUID,
     ) -> bool:
-        return await self._repository.delete(destination_id)
+        return await self._repository.delete(
+            destination_id,
+            self._organization_id,
+        )

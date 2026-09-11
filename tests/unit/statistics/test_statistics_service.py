@@ -12,6 +12,9 @@ from uptime_platform.monitors.entities import (
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
 )
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
 from uptime_platform.statistics.entities import (
     MonitorStatistics,
 )
@@ -53,11 +56,13 @@ class StubStatisticsRepository:
 
 def make_monitor(
     status: MonitorStatus = MonitorStatus.PENDING,
+    organization_id: UUID = DEFAULT_ORGANIZATION_ID,
 ) -> Monitor:
     now = datetime.now(UTC)
 
     return Monitor(
         id=uuid4(),
+        organization_id=organization_id,
         name="API",
         monitor_type=MonitorType.HTTP,
         config=HttpMonitorConfig(
@@ -87,6 +92,7 @@ async def test_get_24h_statistics() -> None:
     service = StatisticsService(
         repository=statistics_repository,
         monitor_repository=monitor_repository,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     result = await service.get_monitor_statistics(
@@ -108,6 +114,7 @@ async def test_statistics_for_nonexistent_monitor_returns_none() -> None:
     service = StatisticsService(
         repository=StubStatisticsRepository(),
         monitor_repository=(InMemoryMonitorRepository()),
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     result = await service.get_monitor_statistics(
@@ -130,6 +137,7 @@ async def test_get_custom_range_statistics() -> None:
     service = StatisticsService(
         repository=statistics_repository,
         monitor_repository=monitor_repository,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     starts_at = datetime(
@@ -170,6 +178,7 @@ async def test_default_statistics_period_is_24_hours() -> None:
     service = StatisticsService(
         repository=statistics_repository,
         monitor_repository=monitor_repository,
+        organization_id=DEFAULT_ORGANIZATION_ID,
     )
 
     result = await service.get_monitor_statistics(monitor_id=monitor.id)

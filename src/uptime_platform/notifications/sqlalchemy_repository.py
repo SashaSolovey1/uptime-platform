@@ -34,6 +34,7 @@ class SqlAlchemyNotificationDestinationRepository:
     ) -> NotificationDestination:
         model = NotificationDestinationModel(
             id=destination.id,
+            organization_id=destination.organization_id,
             name=destination.name,
             destination_type=destination.destination_type,
             enabled=destination.enabled,
@@ -51,11 +52,16 @@ class SqlAlchemyNotificationDestinationRepository:
     async def get_by_id(
         self,
         destination_id: UUID,
+        organization_id: UUID,
     ) -> NotificationDestination | None:
-        model = await self._session.get(
-            NotificationDestinationModel,
-            destination_id,
+        statement = select(NotificationDestinationModel).where(
+            NotificationDestinationModel.id == destination_id,
+            NotificationDestinationModel.organization_id == organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return None
@@ -64,9 +70,12 @@ class SqlAlchemyNotificationDestinationRepository:
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[NotificationDestination]:
-        statement = select(NotificationDestinationModel).order_by(
-            NotificationDestinationModel.created_at
+        statement = (
+            select(NotificationDestinationModel)
+            .where(NotificationDestinationModel.organization_id == organization_id)
+            .order_by(NotificationDestinationModel.created_at)
         )
 
         result = await self._session.execute(statement)
@@ -77,10 +86,14 @@ class SqlAlchemyNotificationDestinationRepository:
         self,
         destination: NotificationDestination,
     ) -> NotificationDestination | None:
-        model = await self._session.get(
-            NotificationDestinationModel,
-            destination.id,
+        statement = select(NotificationDestinationModel).where(
+            NotificationDestinationModel.id == destination.id,
+            NotificationDestinationModel.organization_id == destination.organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return None
@@ -98,11 +111,16 @@ class SqlAlchemyNotificationDestinationRepository:
     async def delete(
         self,
         destination_id: UUID,
+        organization_id: UUID,
     ) -> bool:
-        model = await self._session.get(
-            NotificationDestinationModel,
-            destination_id,
+        statement = select(NotificationDestinationModel).where(
+            NotificationDestinationModel.id == destination_id,
+            NotificationDestinationModel.organization_id == organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return False
@@ -114,10 +132,14 @@ class SqlAlchemyNotificationDestinationRepository:
 
     async def get_enabled(
         self,
+        organization_id: UUID,
     ) -> list[NotificationDestination]:
         statement = (
             select(NotificationDestinationModel)
-            .where(NotificationDestinationModel.enabled.is_(True))
+            .where(
+                NotificationDestinationModel.organization_id == organization_id,
+                NotificationDestinationModel.enabled.is_(True),
+            )
             .order_by(NotificationDestinationModel.created_at)
         )
 
@@ -159,6 +181,7 @@ class SqlAlchemyNotificationDestinationRepository:
 
         return NotificationDestination(
             id=model.id,
+            organization_id=model.organization_id,
             name=model.name,
             destination_type=model.destination_type,
             enabled=model.enabled,

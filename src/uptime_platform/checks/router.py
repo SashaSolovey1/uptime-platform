@@ -9,6 +9,8 @@ from fastapi import (
     status,
 )
 
+from uptime_platform.auth.dependencies import require_member
+from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.checks.dependencies import (
     get_check_service,
 )
@@ -32,6 +34,10 @@ async def run_monitor_check(
     service: Annotated[
         CheckService,
         Depends(get_check_service),
+    ],
+    _context: Annotated[
+        OrganizationContext,
+        Depends(require_member),
     ],
 ) -> Check:
     check = await service.run(monitor_id)

@@ -35,6 +35,7 @@ class SqlAlchemyMonitorRepository:
     ) -> Monitor:
         model = MonitorModel(
             id=monitor.id,
+            organization_id=monitor.organization_id,
             name=monitor.name,
             monitor_type=monitor.monitor_type,
             config=self._config_to_dict(monitor.config),
@@ -58,21 +59,31 @@ class SqlAlchemyMonitorRepository:
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[Monitor]:
-        result = await self._session.execute(select(MonitorModel))
+        statement = (
+            select(MonitorModel)
+            .where(MonitorModel.organization_id == organization_id)
+            .order_by(MonitorModel.created_at)
+        )
 
-        models = result.scalars().all()
+        result = await self._session.execute(statement)
 
-        return [self._to_entity(model) for model in models]
+        return [self._to_entity(model) for model in result.scalars().all()]
 
     async def get_by_id(
         self,
         monitor_id: UUID,
+        organization_id: UUID,
     ) -> Monitor | None:
-        model = await self._session.get(
-            MonitorModel,
-            monitor_id,
+        statement = select(MonitorModel).where(
+            MonitorModel.id == monitor_id,
+            MonitorModel.organization_id == organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return None
@@ -131,11 +142,16 @@ class SqlAlchemyMonitorRepository:
     async def delete(
         self,
         monitor_id: UUID,
+        organization_id: UUID,
     ) -> bool:
-        model = await self._session.get(
-            MonitorModel,
-            monitor_id,
+        statement = select(MonitorModel).where(
+            MonitorModel.id == monitor_id,
+            MonitorModel.organization_id == organization_id,
         )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
 
         if model is None:
             return False
@@ -305,6 +321,7 @@ class SqlAlchemyMonitorRepository:
 
         return Monitor(
             id=model.id,
+            organization_id=model.organization_id,
             name=model.name,
             monitor_type=model.monitor_type,
             config=config,

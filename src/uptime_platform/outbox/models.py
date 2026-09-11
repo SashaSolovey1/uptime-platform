@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import (
     JSON,
     DateTime,
+    ForeignKey,
     Index,
     Uuid,
 )
@@ -22,6 +23,16 @@ class OutboxEventModel(Base):
     id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
         primary_key=True,
+    )
+
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey(
+            "organizations.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
     )
 
     event_type: Mapped[OutboxEventType] = mapped_column(

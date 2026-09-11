@@ -2,7 +2,7 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/sashastudent/uptime-platform)](https://hub.docker.com/r/sashastudent/uptime-platform)
 
-Self-hosted uptime monitoring, incident management, and public status pages built with FastAPI.
+Self-hosted uptime monitoring, incident management, notifications, and public status pages built with FastAPI.
 
 > **Status:** MVP. The project is under active development.
 
@@ -21,9 +21,14 @@ Self-hosted uptime monitoring, incident management, and public status pages buil
 - Public status pages
 - Uptime statistics with 24h, 7d, 30d, and custom time ranges
 - Webhook, Telegram, and email notification destinations
-- Reliable notification delivery with retries
+- Reliable notification delivery with retries and worker leases
 - HMAC-SHA256 signed webhook requests
 - SMTP email delivery with TLS and STARTTLS support
+- User registration and JWT authentication
+- Organizations and organization-scoped resources
+- Role-based access control with owner, admin, member, and viewer roles
+- API keys for CI, scripts, and service integrations
+- Organization isolation across monitors, incidents, maintenance windows, status pages, statistics, and notification destinations
 - PostgreSQL persistence with Alembic migrations
 - Docker Compose deployment
 - Unit, API, and PostgreSQL integration tests
@@ -43,6 +48,14 @@ Create the environment file:
 cp .env.example .env
 ```
 
+Generate a JWT signing secret:
+
+```bash
+openssl rand -hex 32
+```
+
+Set the generated value as `JWT_SECRET` in `.env`.
+
 Start the platform:
 
 ```bash
@@ -61,13 +74,88 @@ Health check:
 http://127.0.0.1:8000/health
 ```
 
+## Authentication
+
+### User authentication
+
+Register a user:
+
+```http
+POST /api/v1/auth/register
+```
+
+Log in:
+
+```http
+POST /api/v1/auth/login
+```
+
+A successful login returns a JWT access token.
+
+Protected requests use:
+
+```http
+Authorization: Bearer <access-token>
+```
+
+Organization-scoped requests also use:
+
+```http
+X-Organization-ID: <organization-uuid>
+```
+
+The organizations available to the authenticated user can be retrieved through:
+
+```http
+GET /api/v1/organizations
+```
+
+### Roles
+
+Organization memberships use four roles:
+
+| Role | Access |
+| --- | --- |
+| `viewer` | Read organization resources |
+| `member` | Read resources and perform operational changes |
+| `admin` | Member access plus administrative resource management |
+| `owner` | Full organization access |
+
+Resource access is scoped to the selected organization.
+
+### API keys
+
+Admins and owners can create API keys for CI systems, scripts, and other service integrations.
+
+The complete API key is returned only once when it is created. Only its SHA-256 hash and a short visible prefix are stored by the platform.
+
+API key requests use the same authorization header:
+
+```http
+Authorization: Bearer upt_<api-key>
+```
+
+API keys are bound to a single organization and currently receive member-level operational access.
+
+Keys can be listed and revoked through the API.
+
 ## API
 
-The platform exposes a REST API for managing monitors, checks, incidents, maintenance windows, status pages, statistics, and notification destinations.
+The platform exposes a REST API for managing:
+
+- organizations
+- monitors
+- checks
+- incidents
+- maintenance windows
+- monitor statistics
+- notification destinations
+- status pages
+- API keys
 
 HTTP, TCP, DNS, TLS, and ICMP monitors use different configuration structures depending on the selected monitor type.
 
-The current request and response schemas, available endpoints, validation rules, and example payloads can be found in the interactive Swagger documentation:
+The current request and response schemas, available endpoints, validation rules, and example payloads are available in the interactive Swagger documentation:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -78,8 +166,6 @@ http://127.0.0.1:8000/docs
 Monitor statistics are available for 24h, 7d, 30d, and custom time ranges.
 
 Statistics include uptime percentage, successful and failed check counts, total checks, and average response time.
-
-See the Swagger documentation for the available statistics endpoints and request parameters.
 
 ## Notification Destinations
 
@@ -100,8 +186,6 @@ Email notifications are delivered through SMTP with the following security modes
 - `tls`
 
 Sensitive destination credentials such as webhook secrets, Telegram bot tokens, and SMTP passwords are not returned by the API.
-
-See the Swagger documentation for notification destination configuration and request schemas.
 
 ## Development
 
@@ -136,7 +220,7 @@ make scheduler
 make notification-worker
 ```
 
-Run checks:
+Run all checks:
 
 ```bash
 make format
@@ -194,17 +278,16 @@ make docker-reset
 
 ## Tech Stack
 
-Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · asyncio · httpx2 · dnspython · icmplib · aiosmtplib · Docker Compose · pytest · Ruff · uv
+Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pydantic · PyJWT · pwdlib/Argon2 · asyncio · httpx2 · dnspython · icmplib · aiosmtplib · Docker Compose · pytest · Ruff · uv
 
 ## Roadmap
 
-- Organizations, authentication, RBAC, and API keys
 - Encrypted notification credentials
 - Slack notification destination
 - Scheduler claiming and multi-instance safety
 - Check history retention and cleanup
 - Prometheus metrics and Grafana dashboards
-- Vue.js web UI for managing monitors, incidents, maintenance windows, notification destinations, status pages, and organizations
+- Vue.js web UI for managing monitors, incidents, maintenance windows, notification destinations, status pages, organizations, and API keys
 - CI/CD with automated tests and Docker image publishing
 - Production hardening and deployment documentation
 
@@ -214,6 +297,12 @@ The image is available on Docker Hub:
 
 ```bash
 docker pull sashastudent/uptime-platform:latest
+```
+
+Versioned releases are also published:
+
+```bash
+docker pull sashastudent/uptime-platform:0.8.0
 ```
 
 ## License

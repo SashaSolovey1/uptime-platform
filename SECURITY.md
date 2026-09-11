@@ -6,8 +6,8 @@ Uptime Platform is under active development. Security fixes are provided for the
 
 | Version | Supported |
 | ------- | --------- |
-| 0.3.x   | Yes       |
-| < 0.3   | No        |
+| 0.8.x   | ✅ |
+| < 0.8   | ❌ |
 
 Until the project reaches a stable `1.0.0` release, only the latest release line is actively supported.
 

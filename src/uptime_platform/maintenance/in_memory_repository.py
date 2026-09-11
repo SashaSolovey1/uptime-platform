@@ -29,18 +29,20 @@ class InMemoryMaintenanceWindowRepository:
 
     async def get_all(
         self,
-        monitor_id: UUID | None = None,
+        monitor_ids: set[UUID],
     ) -> list[MaintenanceWindow]:
-        windows = list(self._windows.values())
+        windows = [
+            window
+            for window in self._windows.values()
+            if window.monitor_id in monitor_ids
+        ]
 
-        if monitor_id is not None:
-            windows = [window for window in windows if window.monitor_id == monitor_id]
-
-        return sorted(
-            windows,
+        windows.sort(
             key=lambda window: window.starts_at,
             reverse=True,
         )
+
+        return windows
 
     async def get_active(
         self,

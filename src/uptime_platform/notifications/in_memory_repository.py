@@ -26,19 +26,38 @@ class InMemoryNotificationDestinationRepository:
     async def get_by_id(
         self,
         destination_id: UUID,
+        organization_id: UUID,
     ) -> NotificationDestination | None:
-        return self._destinations.get(destination_id)
+        destination = self._destinations.get(destination_id)
+
+        if destination is None:
+            return None
+
+        if destination.organization_id != organization_id:
+            return None
+
+        return destination
 
     async def get_all(
         self,
+        organization_id: UUID,
     ) -> list[NotificationDestination]:
-        return list(self._destinations.values())
+        return [
+            destination
+            for destination in self._destinations.values()
+            if (destination.organization_id == organization_id)
+        ]
 
     async def update(
         self,
         destination: NotificationDestination,
     ) -> NotificationDestination | None:
-        if destination.id not in self._destinations:
+        existing = self._destinations.get(destination.id)
+
+        if existing is None:
+            return None
+
+        if existing.organization_id != destination.organization_id:
             return None
 
         self._destinations[destination.id] = destination
@@ -48,8 +67,14 @@ class InMemoryNotificationDestinationRepository:
     async def delete(
         self,
         destination_id: UUID,
+        organization_id: UUID,
     ) -> bool:
-        if destination_id not in self._destinations:
+        destination = self._destinations.get(destination_id)
+
+        if destination is None:
+            return False
+
+        if destination.organization_id != organization_id:
             return False
 
         del self._destinations[destination_id]
@@ -58,11 +83,12 @@ class InMemoryNotificationDestinationRepository:
 
     async def get_enabled(
         self,
+        organization_id: UUID,
     ) -> list[NotificationDestination]:
         return [
             destination
             for destination in self._destinations.values()
-            if destination.enabled
+            if (destination.organization_id == organization_id and destination.enabled)
         ]
 
 
@@ -154,13 +180,19 @@ class InMemoryNotificationDeliveryRepository:
     async def release_lock(
         self,
         delivery_id: UUID,
-    ) -> None:
+        locked_until: datetime,
+    ) -> bool:
         delivery = self._deliveries.get(delivery_id)
 
         if delivery is None:
-            return
+            return False
+
+        if delivery.locked_until != locked_until:
+            return False
 
         self._deliveries[delivery_id] = replace(
             delivery,
             locked_until=None,
         )
+
+        return True

@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 
+from uptime_platform.api_keys.router import (
+    router as api_keys_router,
+)
+from uptime_platform.auth.router import (
+    router as auth_router,
+)
 from uptime_platform.checks.router import (
     router as checks_router,
 )
@@ -15,6 +21,9 @@ from uptime_platform.monitors.router import (
 from uptime_platform.notifications.router import (
     router as notifications_router,
 )
+from uptime_platform.organizations.router import (
+    router as organizations_router,
+)
 from uptime_platform.statistics.router import (
     router as statistics_router,
 )
@@ -24,7 +33,7 @@ from uptime_platform.status_pages.router import (
 
 app = FastAPI(
     title="Uptime Platform API",
-    version="0.1.0",
+    version="0.8.0",
 )
 
 
@@ -38,6 +47,7 @@ async def health() -> dict[str, str]:
     }
 
 
+app.include_router(auth_router)
 app.include_router(monitors_router)
 app.include_router(checks_router)
 app.include_router(incidents_router)
@@ -45,3 +55,5 @@ app.include_router(notifications_router)
 app.include_router(maintenance_router)
 app.include_router(status_pages_router)
 app.include_router(statistics_router)
+app.include_router(organizations_router)
+app.include_router(api_keys_router)

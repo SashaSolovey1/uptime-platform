@@ -1,6 +1,15 @@
+from datetime import UTC, datetime
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
 
+from uptime_platform.auth.dependencies import (
+    get_organization_context,
+)
+from uptime_platform.auth.entities import (
+    OrganizationContext,
+)
 from uptime_platform.main import app
 from uptime_platform.monitors.dependencies import (
     get_monitor_repository,
@@ -8,23 +17,67 @@ from uptime_platform.monitors.dependencies import (
 from uptime_platform.monitors.in_memory_repository import (
     InMemoryMonitorRepository,
 )
+from uptime_platform.organizations.constants import (
+    DEFAULT_ORGANIZATION_ID,
+)
+from uptime_platform.organizations.entities import (
+    Membership,
+    Organization,
+    OrganizationRole,
+)
+from uptime_platform.users.entities import User
 
 
 @pytest.fixture
-def repository() -> InMemoryMonitorRepository:
-    return InMemoryMonitorRepository()
+def organization_context() -> OrganizationContext:
+    now = datetime.now(UTC)
+
+    user = User(
+        id=uuid4(),
+        email="owner@example.com",
+        password_hash="not-used",
+        created_at=now,
+    )
+
+    organization = Organization(
+        id=DEFAULT_ORGANIZATION_ID,
+        name="Test Organization",
+        created_at=now,
+    )
+
+    membership = Membership(
+        id=uuid4(),
+        organization_id=organization.id,
+        user_id=user.id,
+        role=OrganizationRole.OWNER,
+        created_at=now,
+    )
+
+    return OrganizationContext(
+        user=user,
+        organization=organization,
+        membership=membership,
+    )
 
 
 @pytest.fixture
 def client(
     repository: InMemoryMonitorRepository,
+    organization_context: OrganizationContext,
 ) -> TestClient:
     app.dependency_overrides[get_monitor_repository] = lambda: repository
+
+    app.dependency_overrides[get_organization_context] = lambda: organization_context
 
     with TestClient(app) as test_client:
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def repository() -> InMemoryMonitorRepository:
+    return InMemoryMonitorRepository()
 
 
 def test_create_monitor(client: TestClient) -> None:
@@ -170,3 +223,64 @@ def test_update_monitor(
     assert body["name"] == "Production API"
     assert body["interval_seconds"] == 30
     assert body["timeout_seconds"] == 15
+
+
+def test_update_http_monitor_rejects_body_check_for_head(
+    client: TestClient,
+) -> None:
+    create_response = client.post(
+        "/api/v1/monitors",
+        json={
+            "name": "Production API",
+            "monitor_type": "http",
+            "config": {
+                "url": "https://example.com/health",
+                "body_contains": "healthy",
+            },
+        },
+    )
+
+    monitor_id = create_response.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/monitors/{monitor_id}",
+        json={
+            "config": {
+                "method": "HEAD",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "HEAD monitor cannot use body_contains",
+    }
+
+
+def test_update_tcp_monitor_with_invalid_port_returns_422(
+    client: TestClient,
+) -> None:
+    create_response = client.post(
+        "/api/v1/monitors",
+        json={
+            "name": "PostgreSQL",
+            "monitor_type": "tcp",
+            "config": {
+                "host": "database.example.com",
+                "port": 5432,
+            },
+        },
+    )
+
+    monitor_id = create_response.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/monitors/{monitor_id}",
+        json={
+            "config": {
+                "port": 70000,
+            },
+        },
+    )
+
+    assert response.status_code == 422

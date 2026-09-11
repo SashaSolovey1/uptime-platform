@@ -112,12 +112,13 @@ class Scheduler:
                     )
 
                     service = CheckService(
-                        monitor_repository=(monitor_repository),
-                        check_repository=(check_repository),
-                        incident_repository=(incident_repository),
-                        outbox_repository=(outbox_repository),
-                        maintenance_repository=(maintenance_repository),
-                        checker_factory=(self._checker_factory),
+                        monitor_repository=monitor_repository,
+                        check_repository=check_repository,
+                        incident_repository=incident_repository,
+                        outbox_repository=outbox_repository,
+                        maintenance_repository=maintenance_repository,
+                        checker_factory=self._checker_factory,
+                        organization_id=monitor.organization_id,
                     )
 
                     await service.record(
