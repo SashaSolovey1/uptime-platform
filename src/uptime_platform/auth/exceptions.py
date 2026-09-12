@@ -8,3 +8,7 @@ class InvalidCredentialsError(ValueError):
 
 class InvalidAccessTokenError(ValueError):
     pass
+
+
+class InvalidRefreshTokenError(Exception):
+    pass

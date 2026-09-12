@@ -21,6 +21,26 @@ class AuthSettings(BaseSettings):
         le=1440,
     )
 
+    refresh_token_hash_secret: SecretStr = Field(
+        min_length=32,
+    )
+
+    refresh_token_ttl_days: int = Field(
+        default=30,
+        ge=1,
+        le=365,
+    )
+
+    refresh_cookie_name: str = "refresh_token"
+
+    refresh_cookie_secure: bool = False
+
+    refresh_cookie_samesite: Literal[
+        "lax",
+        "strict",
+        "none",
+    ] = "lax"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -30,4 +50,5 @@ class AuthSettings(BaseSettings):
 
 @lru_cache
 def get_auth_settings() -> AuthSettings:
+    # noinspection PyArgumentList
     return AuthSettings()

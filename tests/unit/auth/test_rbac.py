@@ -5,6 +5,9 @@ import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
+from uptime_platform.api_keys.config import (
+    ApiKeySettings,
+)
 from uptime_platform.api_keys.in_memory_repository import (
     InMemoryApiKeyRepository,
 )
@@ -38,6 +41,8 @@ pytestmark = pytest.mark.anyio
 
 
 TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef"
+
+TEST_API_KEY_HASH_SECRET = "test-api-key-hash-secret-0123456789abcdef"
 
 
 def make_user() -> User:
@@ -82,6 +87,12 @@ def make_token_service() -> TokenService:
         secret=TEST_JWT_SECRET,
         algorithm="HS256",
         access_token_ttl_minutes=60,
+    )
+
+
+def make_api_key_settings() -> ApiKeySettings:
+    return ApiKeySettings(
+        api_key_hash_secret=TEST_API_KEY_HASH_SECRET,
     )
 
 
@@ -214,6 +225,7 @@ async def test_organization_context_rejects_user_without_membership() -> None:
             organization_repository=organization_repository,
             membership_repository=membership_repository,
             api_key_repository=api_key_repository,
+            api_key_settings=make_api_key_settings(),
             organization_id=organization.id,
         )
 
@@ -267,6 +279,7 @@ async def test_organization_context_returns_membership() -> None:
         organization_repository=organization_repository,
         membership_repository=membership_repository,
         api_key_repository=api_key_repository,
+        api_key_settings=make_api_key_settings(),
         organization_id=organization.id,
     )
 

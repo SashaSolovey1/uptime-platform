@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+from uuid import UUID
 
 from uptime_platform.api_keys.entities import ApiKey
 from uptime_platform.organizations.entities import (
@@ -32,3 +34,19 @@ class OrganizationContext:
             return OrganizationRole.MEMBER
 
         raise RuntimeError("Organization context has no principal")
+
+
+@dataclass(frozen=True, slots=True)
+class RefreshSession:
+    id: UUID
+    user_id: UUID
+    token_hash: str
+    created_at: datetime
+    expires_at: datetime
+    revoked_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TokenPair:
+    access_token: str
+    refresh_token: str

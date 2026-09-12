@@ -14,6 +14,10 @@ from fastapi.security import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from uptime_platform.api_keys.config import (
+    ApiKeySettings,
+    get_api_key_settings,
+)
 from uptime_platform.api_keys.protocols import (
     ApiKeyRepositoryProtocol,
 )
@@ -205,6 +209,10 @@ async def get_organization_context(
         ApiKeyRepositoryProtocol,
         Depends(get_api_key_repository),
     ],
+    api_key_settings: Annotated[
+        ApiKeySettings,
+        Depends(get_api_key_settings),
+    ],
     organization_id: Annotated[
         UUID | None,
         Header(alias="X-Organization-ID"),
@@ -220,7 +228,10 @@ async def get_organization_context(
     token = credentials.credentials
 
     if token.startswith(API_KEY_PREFIX):
-        key_hash = hash_api_key(token)
+        key_hash = hash_api_key(
+            token,
+            api_key_settings.api_key_hash_secret.get_secret_value(),
+        )
 
         api_key = await api_key_repository.get_by_hash(key_hash)
 

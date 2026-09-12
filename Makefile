@@ -21,8 +21,8 @@
 	docker-ps \
 	logs-api \
 	logs-scheduler \
-	logs-notification-worker
-	docker-rebuild \
+	logs-notification-worker \
+	docker-rebuild
 
 
 dev-up:

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from uptime_platform.api_keys.router import (
     router as api_keys_router,
@@ -8,6 +9,9 @@ from uptime_platform.auth.router import (
 )
 from uptime_platform.checks.router import (
     router as checks_router,
+)
+from uptime_platform.core.web_config import (
+    get_web_settings,
 )
 from uptime_platform.incidents.router import (
     router as incidents_router,
@@ -21,6 +25,9 @@ from uptime_platform.monitors.router import (
 from uptime_platform.notifications.router import (
     router as notifications_router,
 )
+from uptime_platform.organizations.member_router import (
+    router as organization_members_router,
+)
 from uptime_platform.organizations.router import (
     router as organizations_router,
 )
@@ -33,7 +40,17 @@ from uptime_platform.status_pages.router import (
 
 app = FastAPI(
     title="Uptime Platform API",
-    version="0.8.0",
+    version="0.8.1",
+)
+
+web_settings = get_web_settings()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=web_settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -57,3 +74,4 @@ app.include_router(status_pages_router)
 app.include_router(statistics_router)
 app.include_router(organizations_router)
 app.include_router(api_keys_router)
+app.include_router(organization_members_router)

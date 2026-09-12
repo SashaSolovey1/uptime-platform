@@ -11,6 +11,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from uptime_platform.auth.config import (
+    AuthSettings,
+)
 from uptime_platform.auth.entities import OrganizationContext
 from uptime_platform.checks.models import CheckModel
 from uptime_platform.monitors.models import MonitorModel
@@ -32,6 +35,13 @@ from uptime_platform.users.models import UserModel  # noqa: F401
 
 class TestSettings(BaseSettings):
     database_url: str
+    api_key_hash_secret: str
+
+    jwt_secret: str
+    jwt_access_token_ttl_minutes: int
+
+    refresh_token_hash_secret: str
+    refresh_token_ttl_days: int
 
     model_config = SettingsConfigDict(
         env_file=".env.test",
@@ -43,6 +53,13 @@ class TestSettings(BaseSettings):
 @pytest.fixture
 def anyio_backend() -> str:
     return "asyncio"
+
+
+@pytest.fixture
+def api_key_hash_secret() -> str:
+    settings = TestSettings()
+
+    return settings.api_key_hash_secret
 
 
 @pytest.fixture
@@ -114,4 +131,18 @@ def organization_context() -> OrganizationContext:
         user=user,
         organization=organization,
         membership=membership,
+    )
+
+
+@pytest.fixture
+def auth_settings() -> AuthSettings:
+    settings = TestSettings()
+
+    return AuthSettings(
+        jwt_secret=settings.jwt_secret,
+        jwt_access_token_ttl_minutes=(settings.jwt_access_token_ttl_minutes),
+        refresh_token_hash_secret=(settings.refresh_token_hash_secret),
+        refresh_token_ttl_days=(settings.refresh_token_ttl_days),
+        refresh_cookie_secure=False,
+        refresh_cookie_samesite="lax",
     )

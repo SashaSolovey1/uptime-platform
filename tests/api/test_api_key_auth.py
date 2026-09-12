@@ -1,9 +1,14 @@
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import httpx2
 import pytest
 
+from uptime_platform.api_keys.config import (
+    ApiKeySettings,
+    get_api_key_settings,
+)
 from uptime_platform.api_keys.in_memory_repository import (
     InMemoryApiKeyRepository,
 )
@@ -13,8 +18,15 @@ from uptime_platform.api_keys.repository_dependencies import (
 from uptime_platform.api_keys.schemas import (
     ApiKeyCreate,
 )
+from uptime_platform.api_keys.security import (
+    hash_api_key,
+)
 from uptime_platform.api_keys.service import (
     ApiKeyService,
+)
+from uptime_platform.auth.config import (
+    AuthSettings,
+    get_auth_settings,
 )
 from uptime_platform.auth.dependencies import (
     get_organization_repository,
@@ -55,9 +67,10 @@ def monitor_repository() -> InMemoryMonitorRepository:
 async def api_key(
     api_key_repository: InMemoryApiKeyRepository,
     organization_repository: InMemoryOrganizationRepository,
+    api_key_hash_secret: str,
 ) -> str:
     organization = Organization(
-        id=__import__("uuid").uuid4(),
+        id=uuid4(),
         name="API Key Organization",
         created_at=datetime.now(UTC),
     )
@@ -67,6 +80,7 @@ async def api_key(
     service = ApiKeyService(
         repository=api_key_repository,
         organization_id=organization.id,
+        hash_secret=api_key_hash_secret,
     )
 
     result = await service.create(
@@ -83,6 +97,8 @@ async def client(
     api_key_repository: InMemoryApiKeyRepository,
     organization_repository: InMemoryOrganizationRepository,
     monitor_repository: InMemoryMonitorRepository,
+    api_key_hash_secret: str,
+    auth_settings: AuthSettings,
 ) -> AsyncIterator[httpx2.AsyncClient]:
     app.dependency_overrides[get_api_key_repository] = lambda: api_key_repository
 
@@ -90,7 +106,13 @@ async def client(
         organization_repository
     )
 
+    app.dependency_overrides[get_auth_settings] = lambda: auth_settings
+
     app.dependency_overrides[get_monitor_repository] = lambda: monitor_repository
+
+    app.dependency_overrides[get_api_key_settings] = lambda: ApiKeySettings(
+        api_key_hash_secret=api_key_hash_secret,
+    )
 
     transport = httpx2.ASGITransport(
         app=app,
@@ -178,12 +200,14 @@ async def test_api_key_updates_last_used_at(
     client: httpx2.AsyncClient,
     api_key: str,
     api_key_repository: InMemoryApiKeyRepository,
+    api_key_hash_secret: str,
 ) -> None:
-    from uptime_platform.api_keys.security import (
-        hash_api_key,
+    stored = await api_key_repository.get_by_hash(
+        hash_api_key(
+            api_key,
+            api_key_hash_secret,
+        )
     )
-
-    stored = await api_key_repository.get_by_hash(hash_api_key(api_key))
 
     assert stored is not None
     assert stored.last_used_at is None
@@ -197,7 +221,12 @@ async def test_api_key_updates_last_used_at(
 
     assert response.status_code == 200
 
-    stored = await api_key_repository.get_by_hash(hash_api_key(api_key))
+    stored = await api_key_repository.get_by_hash(
+        hash_api_key(
+            api_key,
+            api_key_hash_secret,
+        )
+    )
 
     assert stored is not None
     assert stored.last_used_at is not None

@@ -25,10 +25,14 @@ Self-hosted uptime monitoring, incident management, notifications, and public st
 - HMAC-SHA256 signed webhook requests
 - SMTP email delivery with TLS and STARTTLS support
 - User registration and JWT authentication
+- Rotating refresh-token sessions with HttpOnly cookies
 - Organizations and organization-scoped resources
+- Organization member and role management
 - Role-based access control with owner, admin, member, and viewer roles
 - API keys for CI, scripts, and service integrations
-- Organization isolation across monitors, incidents, maintenance windows, status pages, statistics, and notification destinations
+- HMAC-SHA256 protected API key storage
+- Organization isolation across monitors, incidents, maintenance windows, status pages, statistics, notification destinations, and API keys
+- Configurable CORS support for browser clients
 - PostgreSQL persistence with Alembic migrations
 - Docker Compose deployment
 - Unit, API, and PostgreSQL integration tests
@@ -48,13 +52,21 @@ Create the environment file:
 cp .env.example .env
 ```
 
-Generate a JWT signing secret:
+Generate secrets:
 
 ```bash
 openssl rand -hex 32
+openssl rand -hex 32
+openssl rand -hex 32
 ```
 
-Set the generated value as `JWT_SECRET` in `.env`.
+Use the generated values for:
+
+```dotenv
+JWT_SECRET=<generated-secret>
+API_KEY_HASH_SECRET=<generated-secret>
+REFRESH_TOKEN_HASH_SECRET=<generated-secret>
+```
 
 Start the platform:
 
@@ -76,7 +88,7 @@ http://127.0.0.1:8000/health
 
 ## Authentication
 
-### User authentication
+### User Authentication
 
 Register a user:
 
@@ -90,9 +102,9 @@ Log in:
 POST /api/v1/auth/login
 ```
 
-A successful login returns a JWT access token.
+A successful login returns a short-lived JWT access token and sets a rotating refresh token in an HttpOnly cookie.
 
-Protected requests use:
+The access token is used for normal authenticated API requests:
 
 ```http
 Authorization: Bearer <access-token>
@@ -110,6 +122,33 @@ The organizations available to the authenticated user can be retrieved through:
 GET /api/v1/organizations
 ```
 
+### Refresh Tokens
+
+JWT access tokens are intentionally short-lived.
+
+When an access token expires, the client can obtain a new access token through:
+
+```http
+POST /api/v1/auth/refresh
+```
+
+The refresh token is stored in an HttpOnly cookie and is rotated on every successful refresh.
+
+Each successful refresh:
+
+1. Revokes the previous refresh session.
+2. Creates a new refresh session.
+3. Returns a new JWT access token.
+4. Sets a new refresh-token cookie.
+
+The refresh token itself is never stored in plaintext in PostgreSQL. Only an HMAC-SHA256 digest is stored.
+
+Logout revokes the current refresh session:
+
+```http
+POST /api/v1/auth/logout
+```
+
 ### Roles
 
 Organization memberships use four roles:
@@ -123,11 +162,25 @@ Organization memberships use four roles:
 
 Resource access is scoped to the selected organization.
 
-### API keys
+Admins can manage members with lower roles, while owners can manage all organization roles.
 
-Admins and owners can create API keys for CI systems, scripts, and other service integrations.
+The last owner of an organization cannot be removed or demoted.
 
-The complete API key is returned only once when it is created. Only its SHA-256 hash and a short visible prefix are stored by the platform.
+### Organization Members
+
+Organization administrators can list, add, update, and remove organization members.
+
+Members are added by registered user email.
+
+Organization membership controls which resources a user can access and which actions they can perform.
+
+### API Keys
+
+Admins and owners can create API keys for CI systems, scripts, automation, and service integrations.
+
+The complete API key is returned only once when it is created.
+
+Only an HMAC-SHA256 digest and a short visible prefix are stored by the platform.
 
 API key requests use the same authorization header:
 
@@ -137,13 +190,15 @@ Authorization: Bearer upt_<api-key>
 
 API keys are bound to a single organization and currently receive member-level operational access.
 
-Keys can be listed and revoked through the API.
+API keys can be listed and revoked through the API.
 
 ## API
 
 The platform exposes a REST API for managing:
 
+- authentication
 - organizations
+- organization members
 - monitors
 - checks
 - incidents
@@ -163,9 +218,20 @@ http://127.0.0.1:8000/docs
 
 ## Monitor Statistics
 
-Monitor statistics are available for 24h, 7d, 30d, and custom time ranges.
+Monitor statistics are available for:
 
-Statistics include uptime percentage, successful and failed check counts, total checks, and average response time.
+- 24 hours
+- 7 days
+- 30 days
+- custom time ranges
+
+Statistics include:
+
+- uptime percentage
+- successful check count
+- failed check count
+- total check count
+- average response time
 
 ## Notification Destinations
 
@@ -186,6 +252,48 @@ Email notifications are delivered through SMTP with the following security modes
 - `tls`
 
 Sensitive destination credentials such as webhook secrets, Telegram bot tokens, and SMTP passwords are not returned by the API.
+
+## CORS
+
+CORS is configurable through the environment:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+Credentials are enabled so browser clients can use the HttpOnly refresh-token cookie.
+
+For production deployments, configure the actual frontend origins instead of development localhost addresses.
+
+## Configuration
+
+Important authentication-related environment variables:
+
+```dotenv
+JWT_SECRET=<secure-random-secret>
+JWT_ACCESS_TOKEN_TTL_MINUTES=60
+
+API_KEY_HASH_SECRET=<secure-random-secret>
+
+REFRESH_TOKEN_HASH_SECRET=<secure-random-secret>
+REFRESH_TOKEN_TTL_DAYS=30
+
+REFRESH_COOKIE_NAME=refresh_token
+REFRESH_COOKIE_SECURE=false
+REFRESH_COOKIE_SAMESITE=lax
+
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+For HTTPS production deployments:
+
+```dotenv
+REFRESH_COOKIE_SECURE=true
+```
+
+Changing `API_KEY_HASH_SECRET` invalidates existing API keys.
+
+Changing `REFRESH_TOKEN_HASH_SECRET` invalidates existing refresh sessions.
 
 ## Development
 
@@ -282,12 +390,12 @@ Python 3.13 · FastAPI · SQLAlchemy · PostgreSQL · asyncpg · Alembic · Pyda
 
 ## Roadmap
 
+- Vue.js web UI for managing monitors, incidents, maintenance windows, notification destinations, status pages, organizations, members, and API keys
 - Encrypted notification credentials
 - Slack notification destination
 - Scheduler claiming and multi-instance safety
 - Check history retention and cleanup
 - Prometheus metrics and Grafana dashboards
-- Vue.js web UI for managing monitors, incidents, maintenance windows, notification destinations, status pages, organizations, and API keys
 - CI/CD with automated tests and Docker image publishing
 - Production hardening and deployment documentation
 
@@ -302,7 +410,7 @@ docker pull sashastudent/uptime-platform:latest
 Versioned releases are also published:
 
 ```bash
-docker pull sashastudent/uptime-platform:0.8.0
+docker pull sashastudent/uptime-platform:0.8.1
 ```
 
 ## License

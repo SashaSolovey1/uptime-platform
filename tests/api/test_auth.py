@@ -1,10 +1,20 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from uptime_platform.auth.config import (
+    AuthSettings,
+    get_auth_settings,
+)
 from uptime_platform.auth.dependencies import (
     get_membership_repository,
     get_organization_repository,
     get_user_repository,
+)
+from uptime_platform.auth.in_memory_refresh_repository import (
+    InMemoryRefreshSessionRepository,
+)
+from uptime_platform.auth.refresh_dependencies import (
+    get_refresh_session_repository,
 )
 from uptime_platform.main import app
 from uptime_platform.organizations.in_memory_repository import (
@@ -32,10 +42,17 @@ def membership_repository() -> InMemoryMembershipRepository:
 
 
 @pytest.fixture
+def refresh_repository() -> InMemoryRefreshSessionRepository:
+    return InMemoryRefreshSessionRepository()
+
+
+@pytest.fixture
 def client(
     user_repository: InMemoryUserRepository,
     organization_repository: InMemoryOrganizationRepository,
     membership_repository: InMemoryMembershipRepository,
+    refresh_repository: InMemoryRefreshSessionRepository,
+    auth_settings: AuthSettings,
 ) -> TestClient:
     app.dependency_overrides[get_user_repository] = lambda: user_repository
 
@@ -44,6 +61,12 @@ def client(
     )
 
     app.dependency_overrides[get_membership_repository] = lambda: membership_repository
+
+    app.dependency_overrides[get_refresh_session_repository] = lambda: (
+        refresh_repository
+    )
+
+    app.dependency_overrides[get_auth_settings] = lambda: auth_settings
 
     with TestClient(app) as test_client:
         yield test_client
@@ -135,8 +158,9 @@ def register_user(
     assert response.status_code == 201
 
 
-def test_login_returns_access_token(
+def test_login_returns_access_token_and_refresh_cookie(
     client: TestClient,
+    auth_settings: AuthSettings,
 ) -> None:
     register_user(client)
 
@@ -153,11 +177,16 @@ def test_login_returns_access_token(
     body = response.json()
 
     assert body["token_type"] == "bearer"
-    assert isinstance(
-        body["access_token"],
-        str,
-    )
     assert body["access_token"]
+
+    refresh_token = response.cookies.get(auth_settings.refresh_cookie_name)
+
+    assert refresh_token is not None
+    assert refresh_token.startswith("upr_")
+
+    assert "HttpOnly" in response.headers["set-cookie"]
+
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_login_with_invalid_password_returns_401(
@@ -224,5 +253,112 @@ def test_me_with_invalid_token_returns_401(
             "Authorization": ("Bearer invalid-token"),
         },
     )
+
+    assert response.status_code == 401
+
+
+def test_refresh_rotates_refresh_cookie(
+    client: TestClient,
+    auth_settings: AuthSettings,
+) -> None:
+    register_user(client)
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "strong-password",
+        },
+    )
+
+    old_refresh = login_response.cookies.get(auth_settings.refresh_cookie_name)
+
+    assert old_refresh is not None
+
+    response = client.post("/api/v1/auth/refresh")
+
+    assert response.status_code == 200
+    assert response.json()["access_token"]
+
+    new_refresh = response.cookies.get(auth_settings.refresh_cookie_name)
+
+    assert new_refresh is not None
+    assert new_refresh != old_refresh
+
+
+def test_old_refresh_token_cannot_be_reused(
+    client: TestClient,
+    auth_settings: AuthSettings,
+) -> None:
+    register_user(client)
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "strong-password",
+        },
+    )
+
+    old_refresh = login_response.cookies.get(auth_settings.refresh_cookie_name)
+
+    assert old_refresh is not None
+
+    first_refresh = client.post("/api/v1/auth/refresh")
+
+    assert first_refresh.status_code == 200
+
+    client.cookies.clear()
+
+    client.cookies.set(
+        auth_settings.refresh_cookie_name,
+        old_refresh,
+        path="/api/v1/auth",
+    )
+
+    response = client.post("/api/v1/auth/refresh")
+
+    assert response.status_code == 401
+
+
+def test_logout_revokes_refresh_token(
+    client: TestClient,
+    auth_settings: AuthSettings,
+) -> None:
+    register_user(client)
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "strong-password",
+        },
+    )
+
+    refresh_token = login_response.cookies.get(auth_settings.refresh_cookie_name)
+
+    assert refresh_token is not None
+
+    response = client.post("/api/v1/auth/logout")
+
+    assert response.status_code == 204
+
+    client.cookies.clear()
+
+    client.cookies.set(
+        auth_settings.refresh_cookie_name,
+        refresh_token,
+        path="/api/v1/auth",
+    )
+
+    response = client.post("/api/v1/auth/refresh")
+
+    assert response.status_code == 401
+
+
+def test_refresh_without_cookie_returns_401(
+    client: TestClient,
+) -> None:
+    response = client.post("/api/v1/auth/refresh")
 
     assert response.status_code == 401

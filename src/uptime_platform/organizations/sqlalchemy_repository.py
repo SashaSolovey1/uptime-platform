@@ -174,6 +174,51 @@ class SqlAlchemyMembershipRepository:
 
         return [self._to_entity(model) for model in result.scalars().all()]
 
+    async def update(
+        self,
+        membership: Membership,
+    ) -> Membership | None:
+        statement = select(MembershipModel).where(
+            MembershipModel.id == membership.id,
+            MembershipModel.organization_id == membership.organization_id,
+        )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.role = membership.role
+
+        await self._session.flush()
+        await self._session.refresh(model)
+
+        return self._to_entity(model)
+
+    async def delete(
+        self,
+        membership_id: UUID,
+        organization_id: UUID,
+    ) -> bool:
+        statement = select(MembershipModel).where(
+            MembershipModel.id == membership_id,
+            MembershipModel.organization_id == organization_id,
+        )
+
+        result = await self._session.execute(statement)
+
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            return False
+
+        await self._session.delete(model)
+        await self._session.flush()
+
+        return True
+
     @staticmethod
     def _to_entity(
         model: MembershipModel,

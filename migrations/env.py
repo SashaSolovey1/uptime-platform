@@ -7,6 +7,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from uptime_platform.api_keys.models import ApiKeyModel  # noqa: F401
+from uptime_platform.auth.models import (
+    RefreshSessionModel,  # noqa: F401
+)
 from uptime_platform.checks.models import CheckModel  # noqa: F401
 from uptime_platform.core.config import get_settings
 from uptime_platform.db.base import Base

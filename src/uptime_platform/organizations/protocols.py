@@ -50,3 +50,14 @@ class MembershipRepositoryProtocol(Protocol):
         self,
         organization_id: UUID,
     ) -> list[Membership]: ...
+
+    async def update(
+        self,
+        membership: Membership,
+    ) -> Membership | None: ...
+
+    async def delete(
+        self,
+        membership_id: UUID,
+        organization_id: UUID,
+    ) -> bool: ...

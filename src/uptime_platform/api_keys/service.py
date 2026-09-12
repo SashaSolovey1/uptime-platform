@@ -23,9 +23,11 @@ class ApiKeyService:
         self,
         repository: ApiKeyRepositoryProtocol,
         organization_id: UUID,
+        hash_secret: str,
     ) -> None:
         self._repository = repository
         self._organization_id = organization_id
+        self._hash_secret = hash_secret
 
     async def create(
         self,
@@ -37,7 +39,10 @@ class ApiKeyService:
             id=uuid4(),
             organization_id=self._organization_id,
             name=data.name,
-            key_hash=hash_api_key(plaintext_key),
+            key_hash=hash_api_key(
+                plaintext_key,
+                self._hash_secret,
+            ),
             key_prefix=get_api_key_prefix(plaintext_key),
             created_at=datetime.now(UTC),
             last_used_at=None,

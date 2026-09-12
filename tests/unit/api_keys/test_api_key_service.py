@@ -18,7 +18,9 @@ from uptime_platform.api_keys.service import (
 pytestmark = pytest.mark.anyio
 
 
-async def test_create_api_key_stores_only_hash() -> None:
+async def test_create_api_key_stores_only_hash(
+    api_key_hash_secret: str,
+) -> None:
     organization_id = uuid4()
 
     repository = InMemoryApiKeyRepository()
@@ -26,6 +28,7 @@ async def test_create_api_key_stores_only_hash() -> None:
     service = ApiKeyService(
         repository=repository,
         organization_id=organization_id,
+        hash_secret=api_key_hash_secret,
     )
 
     result = await service.create(
@@ -36,26 +39,34 @@ async def test_create_api_key_stores_only_hash() -> None:
 
     assert result.plaintext_key.startswith("upt_")
 
-    assert result.api_key.key_hash == hash_api_key(result.plaintext_key)
+    assert result.api_key.key_hash == hash_api_key(
+        result.plaintext_key,
+        api_key_hash_secret,
+    )
 
     assert result.api_key.key_hash != result.plaintext_key
 
     assert result.api_key.organization_id == organization_id
+
     assert result.api_key.name == "CI"
     assert result.api_key.last_used_at is None
 
 
-async def test_api_keys_are_scoped_to_organization() -> None:
+async def test_api_keys_are_scoped_to_organization(
+    api_key_hash_secret: str,
+) -> None:
     repository = InMemoryApiKeyRepository()
 
     first_service = ApiKeyService(
         repository=repository,
         organization_id=uuid4(),
+        hash_secret=api_key_hash_secret,
     )
 
     second_service = ApiKeyService(
         repository=repository,
         organization_id=uuid4(),
+        hash_secret=api_key_hash_secret,
     )
 
     created = await first_service.create(

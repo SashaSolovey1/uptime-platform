@@ -90,3 +90,36 @@ class InMemoryMembershipRepository:
             for membership in self._memberships.values()
             if membership.organization_id == organization_id
         ]
+
+    async def update(
+        self,
+        membership: Membership,
+    ) -> Membership | None:
+        existing = self._memberships.get(membership.id)
+
+        if existing is None:
+            return None
+
+        if existing.organization_id != membership.organization_id:
+            return None
+
+        self._memberships[membership.id] = membership
+
+        return membership
+
+    async def delete(
+        self,
+        membership_id: UUID,
+        organization_id: UUID,
+    ) -> bool:
+        membership = self._memberships.get(membership_id)
+
+        if membership is None:
+            return False
+
+        if membership.organization_id != organization_id:
+            return False
+
+        del self._memberships[membership_id]
+
+        return True
