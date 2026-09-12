@@ -29,7 +29,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-RUN python -m pip uninstall -y pip
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip uninstall -y pip
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
