@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
-        format=("%(asctime)s %(levelname)s %(name)s %(message)s"),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
     logger.info("scheduler started")
@@ -26,5 +26,12 @@ async def main() -> None:
     await scheduler.run_forever()
 
 
+def run() -> None:
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("scheduler stopped")
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    run()

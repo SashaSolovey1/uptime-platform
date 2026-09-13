@@ -575,7 +575,7 @@ docker pull sashastudent/uptime-platform:latest
 The latest versioned backend release is:
 
 ```bash
-docker pull sashastudent/uptime-platform:0.8.1
+docker pull sashastudent/uptime-platform:latest
 ```
 
 The Vue frontend is currently under development and is not yet included in the published Docker image.

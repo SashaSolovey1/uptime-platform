@@ -91,43 +91,50 @@ class Scheduler:
         monitor: Monitor,
     ) -> None:
         async with self._semaphore:
-            checker = self._checker_factory.create(monitor)
+            try:
+                checker = self._checker_factory.create(monitor)
 
-            result = await checker.check(
-                timeout_seconds=(monitor.timeout_seconds),
-            )
+                result = await checker.check(
+                    timeout_seconds=monitor.timeout_seconds,
+                )
 
-            async with self._session_factory() as session:
-                try:
-                    monitor_repository = SqlAlchemyMonitorRepository(session)
+                async with self._session_factory() as session:
+                    try:
+                        monitor_repository = SqlAlchemyMonitorRepository(session)
 
-                    check_repository = SqlAlchemyCheckRepository(session)
+                        check_repository = SqlAlchemyCheckRepository(session)
 
-                    incident_repository = SqlAlchemyIncidentRepository(session)
+                        incident_repository = SqlAlchemyIncidentRepository(session)
 
-                    outbox_repository = SqlAlchemyOutboxRepository(session)
+                        outbox_repository = SqlAlchemyOutboxRepository(session)
 
-                    maintenance_repository = SqlAlchemyMaintenanceWindowRepository(
-                        session
-                    )
+                        maintenance_repository = SqlAlchemyMaintenanceWindowRepository(
+                            session
+                        )
 
-                    service = CheckService(
-                        monitor_repository=monitor_repository,
-                        check_repository=check_repository,
-                        incident_repository=incident_repository,
-                        outbox_repository=outbox_repository,
-                        maintenance_repository=maintenance_repository,
-                        checker_factory=self._checker_factory,
-                        organization_id=monitor.organization_id,
-                    )
+                        service = CheckService(
+                            monitor_repository=monitor_repository,
+                            check_repository=check_repository,
+                            incident_repository=incident_repository,
+                            outbox_repository=outbox_repository,
+                            maintenance_repository=maintenance_repository,
+                            checker_factory=self._checker_factory,
+                            organization_id=monitor.organization_id,
+                        )
 
-                    await service.record(
-                        monitor_id=monitor.id,
-                        result=result,
-                    )
+                        await service.record(
+                            monitor_id=monitor.id,
+                            result=result,
+                        )
 
-                    await session.commit()
+                        await session.commit()
 
-                except Exception:
-                    await session.rollback()
-                    raise
+                    except Exception:
+                        await session.rollback()
+                        raise
+
+            except Exception:
+                logger.exception(
+                    "monitor check failed monitor_id=%s",
+                    monitor.id,
+                )

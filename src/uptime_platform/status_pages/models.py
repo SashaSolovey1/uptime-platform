@@ -7,7 +7,6 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    UniqueConstraint,
     Uuid,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -81,12 +80,4 @@ class StatusPageMonitorModel(Base):
         Integer,
         nullable=False,
         default=0,
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "status_page_id",
-            "monitor_id",
-            name="uq_status_page_monitor",
-        ),
     )

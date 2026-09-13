@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
-        format=("%(asctime)s %(levelname)s %(name)s %(message)s"),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
     settings = get_settings()
@@ -36,5 +36,12 @@ async def main() -> None:
         await worker.run_forever()
 
 
+def run() -> None:
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("notification worker stopped")
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    run()
