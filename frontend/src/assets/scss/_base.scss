@@ -1,3 +1,5 @@
+@use 'variables' as *;
+
 *,
 *::before,
 *::after {
@@ -22,7 +24,7 @@ body {
     sans-serif;
 
   color: #1f2937;
-  background: #f8fafc;
+  background: $color-background;
 }
 
 button,

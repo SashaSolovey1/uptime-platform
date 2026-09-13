@@ -13,11 +13,19 @@ import type {
   StatisticsPeriod,
 } from '@/types/monitor'
 
+import { useIncidentStore } from '@/stores/incidents'
+import type { Incident } from '@/types/incident'
+
 const route = useRoute()
 const router = useRouter()
 
 const monitorStore = useMonitorStore()
+const incidentStore = useIncidentStore()
 const organizationStore = useOrganizationStore()
+
+const monitorIncidents = ref<Incident[]>([])
+const incidentsLoading = ref(false)
+const incidentsError = ref<string | null>(null)
 
 const monitor = ref<Monitor | null>(null)
 const lastManualCheck = ref<Check | null>(null)
@@ -142,8 +150,8 @@ async function runCheck(): Promise<void> {
     lastManualCheck.value = await monitorStore.runMonitorCheck(monitor.value.id)
 
     await loadMonitor()
-    await loadChecks()
-    await loadStatistics()
+
+    await Promise.all([loadChecks(), loadStatistics(), loadMonitorIncidents()])
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const detail = error.response?.data?.detail
@@ -181,12 +189,34 @@ async function loadStatistics(): Promise<void> {
   }
 }
 
+async function loadMonitorIncidents(): Promise<void> {
+  const monitorId = getMonitorId()
+
+  if (!monitorId) {
+    return
+  }
+
+  incidentsLoading.value = true
+  incidentsError.value = null
+
+  try {
+    monitorIncidents.value = await incidentStore.getIncidents({
+      monitor_id: monitorId,
+      limit: 5,
+    })
+  } catch {
+    monitorIncidents.value = []
+    incidentsError.value = 'Unable to load incidents'
+  } finally {
+    incidentsLoading.value = false
+  }
+}
+
 onMounted(async () => {
   await loadMonitor()
 
   if (monitor.value) {
-    await loadChecks()
-    await loadStatistics()
+    await Promise.all([loadChecks(), loadStatistics(), loadMonitorIncidents()])
   }
 })
 
@@ -558,6 +588,62 @@ watch(statisticsPeriod, async () => {
         </div>
       </div>
 
+      <div class="section-card monitor-incidents">
+        <div class="section-header">
+          <div>
+            <h2>Incidents</h2>
+
+            <p>Incidents associated with this monitor.</p>
+          </div>
+
+          <RouterLink class="text-link" to="/incidents"> View all </RouterLink>
+        </div>
+
+        <p v-if="incidentsLoading && monitorIncidents.length === 0" class="text-muted">
+          Loading incidents...
+        </p>
+
+        <div v-else-if="incidentsError" class="message-error">
+          {{ incidentsError }}
+        </div>
+
+        <p v-else-if="monitorIncidents.length === 0" class="text-muted">
+          No incidents have been recorded for this monitor.
+        </p>
+
+        <div v-else class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Resolved</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr v-for="incident in monitorIncidents" :key="incident.id">
+                <td>
+                  <RouterLink :to="`/incidents/${incident.id}`">
+                    <span class="incident-status" :class="`incident-status--${incident.status}`">
+                      {{ incident.status === 'open' ? 'Open' : 'Resolved' }}
+                    </span>
+                  </RouterLink>
+                </td>
+
+                <td>
+                  {{ new Date(incident.started_at).toLocaleString() }}
+                </td>
+
+                <td>
+                  {{ incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="check-history">
         <div class="check-history__header">
           <div>
@@ -635,489 +721,3 @@ watch(statisticsPeriod, async () => {
     </template>
   </section>
 </template>
-
-<style scoped>
-.monitor-details__top {
-  margin-bottom: 20px;
-}
-
-.monitor-details__back {
-  color: #2563eb;
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.monitor-details__back:hover {
-  text-decoration: underline;
-}
-
-.monitor-details__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-
-  margin-bottom: 24px;
-}
-
-.monitor-details__title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.monitor-details__title h1 {
-  margin: 0;
-
-  color: #0f172a;
-  font-size: 28px;
-}
-
-.monitor-details__target {
-  margin: 8px 0 0;
-
-  color: #64748b;
-}
-
-.monitor-details__actions {
-  display: flex;
-  gap: 12px;
-}
-
-.monitor-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-
-  margin-bottom: 24px;
-}
-
-.summary-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  padding: 20px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: #ffffff;
-}
-
-.summary-card__label {
-  color: #64748b;
-  font-size: 13px;
-}
-
-.summary-card strong {
-  color: #0f172a;
-}
-
-.monitor-details__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-
-  margin-bottom: 24px;
-}
-
-.details-card {
-  padding: 24px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: #ffffff;
-}
-
-.details-card h2,
-.check-result h2 {
-  margin: 0 0 20px;
-
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.details-card dl,
-.check-result dl {
-  margin: 0;
-}
-
-.details-card dl > div,
-.check-result dl > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-
-  padding: 10px 0;
-
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.details-card dl > div:last-child,
-.check-result dl > div:last-child {
-  border-bottom: 0;
-}
-
-.details-card dt,
-.check-result dt {
-  color: #64748b;
-}
-
-.details-card dd,
-.check-result dd {
-  margin: 0;
-
-  color: #0f172a;
-  text-align: right;
-  word-break: break-word;
-}
-
-.monitor-status {
-  display: inline-block;
-
-  padding: 4px 8px;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.monitor-status--up {
-  color: #166534;
-  background: #dcfce7;
-}
-
-.monitor-status--down {
-  color: #991b1b;
-  background: #fee2e2;
-}
-
-.monitor-status--pending {
-  color: #854d0e;
-  background: #fef9c3;
-}
-
-.monitor-status--paused {
-  color: #475569;
-  background: #f1f5f9;
-}
-
-.check-result {
-  margin-top: 24px;
-  padding: 24px;
-
-  border: 1px solid;
-  border-radius: 8px;
-
-  background: #ffffff;
-}
-
-.check-result--success {
-  border-color: #bbf7d0;
-}
-
-.check-result--failure {
-  border-color: #fecaca;
-}
-
-.check-result__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.check-result--success .check-result__header strong {
-  color: #166534;
-}
-
-.check-result--failure .check-result__header strong {
-  color: #991b1b;
-}
-
-.message-error {
-  padding: 16px;
-
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-
-  color: #991b1b;
-  background: #fef2f2;
-}
-
-.button-primary,
-.button-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 10px 16px;
-
-  border-radius: 6px;
-
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.button-primary {
-  border: 0;
-
-  color: #ffffff;
-  background: #2563eb;
-
-  cursor: pointer;
-}
-
-.button-primary:hover:not(:disabled) {
-  background: #1d4ed8;
-}
-
-.button-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.button-secondary {
-  border: 1px solid #cbd5e1;
-
-  color: #334155;
-  background: #ffffff;
-}
-
-.button-secondary:hover {
-  background: #f8fafc;
-}
-
-@media (max-width: 900px) {
-  .monitor-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .monitor-details__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .monitor-details__header {
-    flex-direction: column;
-  }
-
-  .monitor-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .monitor-details__actions {
-    width: 100%;
-  }
-}
-
-.check-history {
-  margin-top: 24px;
-  padding: 24px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: #ffffff;
-}
-
-.check-history__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-
-  margin-bottom: 20px;
-}
-
-.check-history__header h2 {
-  margin: 0 0 6px;
-
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.check-history__header p {
-  margin: 0;
-
-  color: #64748b;
-  font-size: 14px;
-}
-
-.check-history__message,
-.check-history__empty {
-  margin: 0;
-
-  color: #64748b;
-}
-
-.check-history__table-wrapper {
-  overflow-x: auto;
-}
-
-.check-history__table {
-  width: 100%;
-
-  border-collapse: collapse;
-}
-
-.check-history__table th,
-.check-history__table td {
-  padding: 12px 14px;
-
-  border-bottom: 1px solid #e2e8f0;
-
-  text-align: left;
-  vertical-align: top;
-}
-
-.check-history__table th {
-  color: #64748b;
-  background: #f8fafc;
-
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.check-history__table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.check-status {
-  display: inline-block;
-
-  padding: 4px 8px;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.check-status--success {
-  color: #166534;
-  background: #dcfce7;
-}
-
-.check-status--failure {
-  color: #991b1b;
-  background: #fee2e2;
-}
-
-.check-history__error-cell {
-  max-width: 320px;
-
-  color: #991b1b;
-
-  white-space: normal;
-  word-break: break-word;
-}
-
-.statistics {
-  margin-top: 24px;
-  padding: 24px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: #ffffff;
-}
-
-.statistics__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-
-  margin-bottom: 20px;
-}
-
-.statistics__header h2 {
-  margin: 0 0 6px;
-
-  color: #0f172a;
-  font-size: 18px;
-}
-
-.statistics__header p {
-  margin: 0;
-
-  color: #64748b;
-  font-size: 14px;
-}
-
-.statistics__periods {
-  display: flex;
-  gap: 4px;
-
-  padding: 4px;
-
-  border-radius: 8px;
-
-  background: #f1f5f9;
-}
-
-.period-button {
-  padding: 7px 12px;
-
-  border: 0;
-  border-radius: 6px;
-
-  color: #64748b;
-  background: transparent;
-
-  font-size: 13px;
-  font-weight: 500;
-
-  cursor: pointer;
-}
-
-.period-button:hover {
-  color: #0f172a;
-}
-
-.period-button--active {
-  color: #0f172a;
-  background: #ffffff;
-}
-
-.statistics__message {
-  margin: 0;
-
-  color: #64748b;
-}
-
-.statistics__cards {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.statistics-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  padding: 16px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: #f8fafc;
-}
-
-.statistics-card span {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.statistics-card strong {
-  color: #0f172a;
-  font-size: 20px;
-}
-</style>

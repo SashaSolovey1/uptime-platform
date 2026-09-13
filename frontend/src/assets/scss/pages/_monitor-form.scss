@@ -1,0 +1,111 @@
+@use '../variables' as *;
+
+.monitor-create,
+.monitor-edit {
+  max-width: 860px;
+}
+
+.monitor-create__header,
+.monitor-edit__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 8px;
+
+    color: $color-heading;
+    font-size: 28px;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-muted;
+  }
+}
+
+.monitor-create__back,
+.monitor-edit__back {
+  color: $color-primary;
+  font-size: 14px;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.monitor-create__forbidden,
+.monitor-edit__forbidden {
+  padding: 20px;
+
+  border: 1px solid #fde68a;
+  border-radius: $radius-medium;
+
+  color: $color-warning;
+  background: #fffbeb;
+}
+
+.monitor-edit__error {
+  padding: 20px;
+
+  border: 1px solid $color-danger-border;
+  border-radius: $radius-medium;
+
+  color: $color-danger;
+  background: #fef2f2;
+}
+
+.monitor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  .form-field {
+    margin-bottom: 20px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  &__actions-right {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+.monitor-edit {
+  .monitor-form__actions {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 700px) {
+  .monitor-create__header,
+  .monitor-edit__header {
+    flex-direction: column;
+  }
+
+  .monitor-form {
+    &__actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    &__actions-right {
+      flex-direction: column;
+    }
+  }
+}

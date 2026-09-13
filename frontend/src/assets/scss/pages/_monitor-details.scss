@@ -1,0 +1,308 @@
+@use '../variables' as *;
+
+.monitor-details {
+  &__top {
+    margin-bottom: 20px;
+  }
+
+  &__back {
+    color: $color-primary;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h1 {
+      margin: 0;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+  }
+
+  &__target {
+    margin: 8px 0 0;
+
+    color: $color-muted;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+
+    margin-bottom: 24px;
+  }
+}
+
+.monitor-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+
+  margin-bottom: 24px;
+}
+
+.details-card {
+  padding: 24px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+}
+
+.details-card,
+.check-result {
+  h2 {
+    margin: 0 0 20px;
+
+    color: $color-heading;
+    font-size: 18px;
+  }
+
+  dl {
+    margin: 0;
+
+    > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+
+      padding: 10px 0;
+
+      border-bottom: 1px solid #f1f5f9;
+
+      &:last-child {
+        border-bottom: 0;
+      }
+    }
+  }
+
+  dt {
+    color: $color-muted;
+  }
+
+  dd {
+    margin: 0;
+
+    color: $color-heading;
+    text-align: right;
+    word-break: break-word;
+  }
+}
+
+.check-result {
+  margin-top: 24px;
+  padding: 24px;
+
+  border: 1px solid;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+
+  &--success {
+    border-color: #bbf7d0;
+
+    .check-result__header strong {
+      color: $color-success;
+    }
+  }
+
+  &--failure {
+    border-color: $color-danger-border;
+
+    .check-result__header strong {
+      color: $color-danger;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.check-history,
+.statistics {
+  margin-top: 24px;
+  padding: 24px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+}
+
+.check-history__header,
+.statistics__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0 0 6px;
+
+    color: $color-heading;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-muted;
+    font-size: 14px;
+  }
+}
+
+.check-history {
+  &__message,
+  &__empty {
+    margin: 0;
+
+    color: $color-muted;
+  }
+
+  &__error-cell {
+    max-width: 320px;
+
+    color: $color-danger;
+
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+.statistics {
+  &__periods {
+    display: flex;
+    gap: 4px;
+
+    padding: 4px;
+
+    border-radius: $radius-medium;
+
+    background: #f1f5f9;
+  }
+
+  &__message {
+    margin: 0;
+
+    color: $color-muted;
+  }
+
+  &__cards {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+.period-button {
+  padding: 7px 12px;
+
+  border: 0;
+  border-radius: $radius-small;
+
+  color: $color-muted;
+  background: transparent;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  &:hover {
+    color: $color-heading;
+  }
+
+  &--active {
+    color: $color-heading;
+    background: $color-surface;
+  }
+}
+
+.statistics-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 16px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-background;
+
+  span {
+    color: $color-muted;
+    font-size: 12px;
+  }
+
+  strong {
+    color: $color-heading;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .monitor-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .monitor-details__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .statistics__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .monitor-details {
+    &__header {
+      flex-direction: column;
+    }
+
+    &__actions {
+      width: 100%;
+    }
+  }
+
+  .monitor-summary,
+  .statistics__cards {
+    grid-template-columns: 1fr;
+  }
+
+  .statistics__header,
+  .check-history__header {
+    flex-direction: column;
+  }
+}

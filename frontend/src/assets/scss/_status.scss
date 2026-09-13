@@ -1,0 +1,60 @@
+@use 'variables' as *;
+
+.monitor-status,
+.incident-status,
+.check-status {
+  display: inline-block;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.monitor-status {
+  &--up {
+    color: $color-success;
+    background: $color-success-background;
+  }
+
+  &--down {
+    color: $color-danger;
+    background: $color-danger-background;
+  }
+
+  &--pending {
+    color: $color-warning;
+    background: $color-warning-background;
+  }
+
+  &--paused {
+    color: #475569;
+    background: #f1f5f9;
+  }
+}
+
+.incident-status {
+  &--open {
+    color: $color-danger;
+    background: $color-danger-background;
+  }
+
+  &--resolved {
+    color: $color-success;
+    background: $color-success-background;
+  }
+}
+
+.check-status {
+  &--success {
+    color: $color-success;
+    background: $color-success-background;
+  }
+
+  &--failure {
+    color: $color-danger;
+    background: $color-danger-background;
+  }
+}

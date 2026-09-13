@@ -7,7 +7,7 @@ import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useOrganizationStore } from '@/stores/organizations'
 
-import './assets/main.css'
+import './assets/scss/main.scss'
 
 const app = createApp(App)
 

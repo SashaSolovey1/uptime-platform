@@ -1,0 +1,101 @@
+@use 'variables' as *;
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    color: $color-text;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+
+    border: 1px solid $color-control-border;
+    border-radius: $radius-small;
+
+    color: $color-heading;
+    background: $color-surface;
+
+    outline: none;
+
+    &:focus {
+      border-color: $color-primary;
+    }
+
+    &:disabled {
+      color: $color-muted;
+      background: $color-background;
+    }
+  }
+
+  small {
+    color: $color-muted;
+    font-size: 12px;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form-section {
+  padding: 24px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+
+  h2 {
+    margin: 0 0 20px;
+
+    color: $color-heading;
+    font-size: 18px;
+  }
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 12px;
+
+  color: $color-text;
+  font-size: 14px;
+
+  input {
+    width: auto;
+  }
+}
+
+.form-error {
+  margin: 0;
+
+  color: $color-danger;
+  font-size: 14px;
+}
+
+.monitor-form .form-error {
+  padding: 12px 16px;
+
+  border: 1px solid $color-danger-border;
+  border-radius: $radius-small;
+
+  background: #fef2f2;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

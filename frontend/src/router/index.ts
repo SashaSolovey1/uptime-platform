@@ -9,6 +9,8 @@ import RegisterView from '@/views/RegisterView.vue'
 import MonitorCreateView from '@/views/MonitorCreateView.vue'
 import MonitorEditView from '@/views/MonitorEditView.vue'
 import MonitorDetailsView from '@/views/MonitorDetailsView.vue'
+import IncidentDetailsView from '@/views/IncidentDetailsView.vue'
+import IncidentsView from '@/views/IncidentsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,6 +61,16 @@ const router = createRouter({
           path: 'monitors/:monitorId',
           name: 'monitor-details',
           component: MonitorDetailsView,
+        },
+        {
+          path: 'incidents',
+          name: 'incidents',
+          component: IncidentsView,
+        },
+        {
+          path: 'incidents/:incidentId',
+          name: 'incident-details',
+          component: IncidentDetailsView,
         },
       ],
     },

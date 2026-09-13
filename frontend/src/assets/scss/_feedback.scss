@@ -1,0 +1,40 @@
+@use 'variables' as *;
+
+.message-error {
+  padding: 16px;
+
+  border: 1px solid $color-danger-border;
+  border-radius: $radius-medium;
+
+  color: $color-danger;
+  background: #fef2f2;
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  button {
+    padding: 8px 12px;
+
+    border: 1px solid #fca5a5;
+    border-radius: $radius-small;
+
+    color: $color-danger;
+    background: $color-surface;
+
+    cursor: pointer;
+  }
+}
+
+.text-muted {
+  color: $color-muted;
+}
+
+.text-link {
+  color: $color-primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

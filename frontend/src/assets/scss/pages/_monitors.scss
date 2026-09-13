@@ -1,0 +1,127 @@
+@use '../variables' as *;
+
+.monitors-page {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 8px;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+
+  &__message {
+    color: $color-muted;
+  }
+
+  &__error {
+    padding: 20px;
+
+    border: 1px solid $color-danger-border;
+    border-radius: $radius-medium;
+
+    color: $color-danger;
+    background: #fef2f2;
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    button {
+      padding: 8px 12px;
+
+      border: 1px solid #fca5a5;
+      border-radius: $radius-small;
+
+      color: $color-danger;
+      background: $color-surface;
+
+      cursor: pointer;
+    }
+  }
+
+  &__empty {
+    padding: 48px 24px;
+
+    border: 1px dashed $color-control-border;
+    border-radius: $radius-medium;
+
+    text-align: center;
+
+    h2 {
+      margin: 0 0 8px;
+
+      color: $color-text;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+}
+
+.monitor-name,
+.monitor-edit-link {
+  color: $color-primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.monitor-name {
+  font-weight: 600;
+}
+
+.monitor-edit-link {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.monitor-type {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.monitor-target {
+  overflow: hidden;
+
+  max-width: 320px;
+
+  color: #475569;
+  text-overflow: ellipsis;
+}
+
+.create-monitor-button {
+  padding: 10px 16px;
+
+  border-radius: $radius-small;
+
+  color: $color-surface;
+  background: $color-primary;
+
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    background: $color-primary-hover;
+  }
+}

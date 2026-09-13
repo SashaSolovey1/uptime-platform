@@ -1,0 +1,70 @@
+@use '../variables' as *;
+
+.login-page,
+.register-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.login-card,
+.register-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-large;
+
+  background: $color-surface;
+}
+
+.login-card__header,
+.register-card__header {
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 8px;
+
+    color: $color-heading;
+    font-size: 24px;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-muted;
+  }
+}
+
+.login-form,
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  > button {
+    width: 100%;
+  }
+}
+
+.login-card__footer,
+.register-card__footer {
+  margin: 24px 0 0;
+
+  color: $color-muted;
+  font-size: 14px;
+  text-align: center;
+
+  a {
+    color: $color-primary;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

@@ -1,0 +1,57 @@
+@use 'variables' as *;
+
+.button-primary,
+.button-secondary,
+.button-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 16px;
+
+  border-radius: $radius-small;
+
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.button-primary {
+  border: 0;
+
+  color: $color-surface;
+  background: $color-primary;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-hover;
+  }
+}
+
+.button-secondary {
+  border: 1px solid $color-control-border;
+
+  color: $color-text;
+  background: $color-surface;
+
+  &:hover {
+    background: $color-background;
+  }
+}
+
+.button-danger {
+  border: 1px solid $color-danger-border;
+
+  color: #b91c1c;
+  background: $color-surface;
+
+  &:hover:not(:disabled) {
+    background: #fef2f2;
+  }
+}

@@ -1,0 +1,163 @@
+@use '../variables' as *;
+
+.incidents-page {
+  &__header {
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 8px;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+
+  &__message {
+    color: $color-muted;
+  }
+
+  &__empty {
+    padding: 48px 24px;
+
+    border: 1px dashed $color-control-border;
+    border-radius: $radius-medium;
+
+    text-align: center;
+
+    h2 {
+      margin: 0 0 8px;
+
+      color: $color-text;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+}
+
+.incident-filters {
+  display: flex;
+  gap: 16px;
+
+  margin-bottom: 24px;
+  padding: 16px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  min-width: 200px;
+
+  label {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  select {
+    padding: 8px 10px;
+
+    border: 1px solid $color-control-border;
+    border-radius: $radius-small;
+
+    color: $color-text;
+    background: $color-surface;
+  }
+}
+
+.incident-link,
+.monitor-link {
+  text-decoration: none;
+}
+
+.monitor-link {
+  color: $color-primary;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.incident-details {
+  &__back {
+    display: inline-block;
+
+    margin-bottom: 20px;
+
+    color: $color-primary;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__header {
+    margin-bottom: 24px;
+
+    p {
+      margin: 8px 0 0;
+
+      color: #94a3b8;
+      font-size: 13px;
+    }
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h1 {
+      margin: 0;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+  }
+}
+
+.incident-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .incident-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .incident-filters {
+    flex-direction: column;
+  }
+
+  .filter-field {
+    min-width: 0;
+  }
+
+  .incident-summary {
+    grid-template-columns: 1fr;
+  }
+}

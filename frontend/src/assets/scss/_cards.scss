@@ -1,0 +1,67 @@
+@use 'variables' as *;
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 20px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+
+  &__label,
+  > span {
+    color: $color-muted;
+    font-size: 13px;
+  }
+
+  strong {
+    color: $color-heading;
+  }
+
+  a {
+    color: $color-primary;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.section-card {
+  margin-top: 24px;
+  padding: 24px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0 0 6px;
+
+    color: $color-heading;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+
+    color: $color-muted;
+    font-size: 14px;
+  }
+}
