@@ -11,19 +11,13 @@ const organizationStore = useOrganizationStore()
 const canManageMonitors = computed(() => {
   const role = organizationStore.currentOrganization?.role
 
-  return (
-    role === 'owner'
-    || role === 'admin'
-    || role === 'member'
-  )
+  return role === 'owner' || role === 'admin' || role === 'member'
 })
 
 async function loadMonitors(): Promise<void> {
   try {
     await monitorStore.loadMonitors()
-  } catch {
-
-  }
+  } catch {}
 }
 
 function getMonitorTarget(monitor: Monitor): string {
@@ -66,10 +60,7 @@ onMounted(async () => {
 watch(
   () => organizationStore.currentOrganizationId,
   async (currentOrganizationId, previousOrganizationId) => {
-    if (
-      currentOrganizationId
-      && currentOrganizationId !== previousOrganizationId
-    ) {
+    if (currentOrganizationId && currentOrganizationId !== previousOrganizationId) {
       await loadMonitors()
     }
   },
@@ -78,62 +69,35 @@ watch(
 
 <template>
   <section class="monitors-page">
-  <div class="monitors-page__header">
-    <div>
-      <h1>Monitors</h1>
+    <div class="monitors-page__header">
+      <div>
+        <h1>Monitors</h1>
 
-      <p>
-        Monitor your services and infrastructure.
-      </p>
+        <p>Monitor your services and infrastructure.</p>
+      </div>
+
+      <RouterLink v-if="canManageMonitors" class="create-monitor-button" to="/monitors/new">
+        Create monitor
+      </RouterLink>
     </div>
 
-    <RouterLink
-      v-if="canManageMonitors"
-      class="create-monitor-button"
-      to="/monitors/new"
-    >
-      Create monitor
-    </RouterLink>
-  </div>
+    <p v-if="monitorStore.loading" class="monitors-page__message">Loading monitors...</p>
 
-    <p
-      v-if="monitorStore.loading"
-      class="monitors-page__message"
-    >
-      Loading monitors...
-    </p>
-
-    <div
-      v-else-if="monitorStore.error"
-      class="monitors-page__error"
-    >
+    <div v-else-if="monitorStore.error" class="monitors-page__error">
       <p>
         {{ monitorStore.error }}
       </p>
 
-      <button
-        type="button"
-        @click="loadMonitors"
-      >
-        Try again
-      </button>
+      <button type="button" @click="loadMonitors">Try again</button>
     </div>
 
-    <div
-      v-else-if="monitorStore.monitors.length === 0"
-      class="monitors-page__empty"
-    >
+    <div v-else-if="monitorStore.monitors.length === 0" class="monitors-page__empty">
       <h2>No monitors yet</h2>
 
-      <p>
-        Create your first monitor to start checking a service.
-      </p>
+      <p>Create your first monitor to start checking a service.</p>
     </div>
 
-    <div
-      v-else
-      class="monitors-table-wrapper"
-    >
+    <div v-else class="monitors-table-wrapper">
       <table class="monitors-table">
         <thead>
           <tr>
@@ -143,31 +107,20 @@ watch(
             <th>Target</th>
             <th>Interval</th>
             <th>Next check</th>
-            <th v-if="canManageMonitors">
-            Actions
-            </th>
+            <th v-if="canManageMonitors">Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          <tr
-            v-for="monitor in monitorStore.monitors"
-            :key="monitor.id"
-          >
+          <tr v-for="monitor in monitorStore.monitors" :key="monitor.id">
             <td>
-              <RouterLink
-                class="monitor-name"
-                :to="`/monitors/${monitor.id}`"
-              >
+              <RouterLink class="monitor-name" :to="`/monitors/${monitor.id}`">
                 {{ monitor.name }}
               </RouterLink>
             </td>
 
             <td>
-              <span
-                class="monitor-status"
-                :class="`monitor-status--${monitor.status}`"
-              >
+              <span class="monitor-status" :class="`monitor-status--${monitor.status}`">
                 {{ getStatusLabel(monitor.status) }}
               </span>
             </td>
@@ -180,21 +133,16 @@ watch(
               {{ getMonitorTarget(monitor) }}
             </td>
 
-            <td>
-              {{ monitor.interval_seconds }}s
-            </td>
+            <td>{{ monitor.interval_seconds }}s</td>
 
             <td>
               {{ new Date(monitor.next_check_at).toLocaleString() }}
             </td>
             <td v-if="canManageMonitors">
-            <RouterLink
-              class="monitor-edit-link"
-              :to="`/monitors/${monitor.id}/edit`"
-            >
-              Edit
-            </RouterLink>
-          </td>
+              <RouterLink class="monitor-edit-link" :to="`/monitors/${monitor.id}/edit`">
+                Edit
+              </RouterLink>
+            </td>
           </tr>
         </tbody>
       </table>

@@ -18,11 +18,7 @@ app.use(pinia)
 const authStore = useAuthStore(pinia)
 const organizationStore = useOrganizationStore(pinia)
 
-setupApiInterceptors(
-  authStore,
-  organizationStore,
-  router,
-)
+setupApiInterceptors(authStore, organizationStore, router)
 
 app.use(router)
 

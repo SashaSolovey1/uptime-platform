@@ -1,26 +1,10 @@
-export type MonitorType =
-  | 'http'
-  | 'tcp'
-  | 'dns'
-  | 'tls'
-  | 'icmp'
+export type MonitorType = 'http' | 'tcp' | 'dns' | 'tls' | 'icmp'
 
-export type MonitorStatus =
-  | 'pending'
-  | 'up'
-  | 'down'
-  | 'paused'
+export type MonitorStatus = 'pending' | 'up' | 'down' | 'paused'
 
-export type HttpMethod =
-  | 'GET'
-  | 'HEAD'
+export type HttpMethod = 'GET' | 'HEAD'
 
-export type DnsRecordType =
-  | 'A'
-  | 'AAAA'
-  | 'CNAME'
-  | 'MX'
-  | 'TXT'
+export type DnsRecordType = 'A' | 'AAAA' | 'CNAME' | 'MX' | 'TXT'
 
 export interface HttpMonitorConfig {
   url: string
@@ -90,12 +74,7 @@ export interface IcmpMonitor extends BaseMonitor {
   config: IcmpMonitorConfig
 }
 
-export type Monitor =
-  | HttpMonitor
-  | TcpMonitor
-  | DnsMonitor
-  | TlsMonitor
-  | IcmpMonitor
+export type Monitor = HttpMonitor | TcpMonitor | DnsMonitor | TlsMonitor | IcmpMonitor
 
 interface BaseMonitorCreate {
   name: string
@@ -106,41 +85,26 @@ interface BaseMonitorCreate {
 }
 
 export type MonitorCreate =
-  | (
-      BaseMonitorCreate
-      & {
-        monitor_type: 'http'
-        config: HttpMonitorConfig
-      }
-    )
-  | (
-      BaseMonitorCreate
-      & {
-        monitor_type: 'tcp'
-        config: TcpMonitorConfig
-      }
-    )
-  | (
-      BaseMonitorCreate
-      & {
-        monitor_type: 'dns'
-        config: DnsMonitorConfig
-      }
-    )
-  | (
-      BaseMonitorCreate
-      & {
-        monitor_type: 'tls'
-        config: TlsMonitorConfig
-      }
-    )
-  | (
-      BaseMonitorCreate
-      & {
-        monitor_type: 'icmp'
-        config: IcmpMonitorConfig
-      }
-    )
+  | (BaseMonitorCreate & {
+      monitor_type: 'http'
+      config: HttpMonitorConfig
+    })
+  | (BaseMonitorCreate & {
+      monitor_type: 'tcp'
+      config: TcpMonitorConfig
+    })
+  | (BaseMonitorCreate & {
+      monitor_type: 'dns'
+      config: DnsMonitorConfig
+    })
+  | (BaseMonitorCreate & {
+      monitor_type: 'tls'
+      config: TlsMonitorConfig
+    })
+  | (BaseMonitorCreate & {
+      monitor_type: 'icmp'
+      config: IcmpMonitorConfig
+    })
 
 export type MonitorConfigUpdate =
   | Partial<HttpMonitorConfig>
@@ -156,4 +120,29 @@ export interface MonitorUpdate {
   timeout_seconds?: number
   failure_threshold?: number
   recovery_threshold?: number
+}
+
+export interface Check {
+  id: number
+  monitor_id: string
+  success: boolean
+  response_time_ms: number
+  status_code: number | null
+  error: string | null
+  details?: Record<string, unknown> | null
+  checked_at: string
+}
+
+export type StatisticsPeriod = '24h' | '7d' | '30d'
+
+export interface MonitorStatistics {
+  monitor_id: string
+  period: StatisticsPeriod | null
+  starts_at: string
+  ends_at: string
+  total_checks: number
+  successful_checks: number
+  failed_checks: number
+  uptime_percentage: number | null
+  average_response_time_ms: number | null
 }

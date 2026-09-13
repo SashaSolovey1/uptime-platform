@@ -5,12 +5,7 @@ import { useRouter } from 'vue-router'
 
 import { useMonitorStore } from '@/stores/monitors'
 import { useOrganizationStore } from '@/stores/organizations'
-import type {
-  DnsRecordType,
-  HttpMethod,
-  MonitorCreate,
-  MonitorType,
-} from '@/types/monitor'
+import type { DnsRecordType, HttpMethod, MonitorCreate, MonitorType } from '@/types/monitor'
 
 const router = useRouter()
 
@@ -50,11 +45,7 @@ const errorMessage = ref<string | null>(null)
 const canCreateMonitor = computed(() => {
   const role = organizationStore.currentOrganization?.role
 
-  return (
-    role === 'owner'
-    || role === 'admin'
-    || role === 'member'
-  )
+  return role === 'owner' || role === 'admin' || role === 'member'
 })
 
 watch(httpMethod, (method) => {
@@ -70,24 +61,16 @@ function parseExpectedStatusCodes(): number[] | null {
     return null
   }
 
-  const statusCodes = value
-    .split(',')
-    .map((statusCode) => {
-      return Number(statusCode.trim())
-    })
+  const statusCodes = value.split(',').map((statusCode) => {
+    return Number(statusCode.trim())
+  })
 
   const hasInvalidStatusCode = statusCodes.some((statusCode) => {
-    return (
-      !Number.isInteger(statusCode)
-      || statusCode < 100
-      || statusCode > 599
-    )
+    return !Number.isInteger(statusCode) || statusCode < 100 || statusCode > 599
   })
 
   if (hasInvalidStatusCode) {
-    throw new Error(
-      'Expected status codes must be numbers between 100 and 599',
-    )
+    throw new Error('Expected status codes must be numbers between 100 and 599')
   }
 
   return statusCodes
@@ -111,10 +94,7 @@ function buildMonitorCreate(): MonitorCreate {
           url: httpUrl.value.trim(),
           method: httpMethod.value,
           expected_status_codes: parseExpectedStatusCodes(),
-          body_contains:
-            httpMethod.value === 'HEAD'
-              ? null
-              : bodyContains.value.trim() || null,
+          body_contains: httpMethod.value === 'HEAD' ? null : bodyContains.value.trim() || null,
           follow_redirects: followRedirects.value,
           verify_tls: verifyTls.value,
         },
@@ -178,10 +158,7 @@ async function submitMonitor(): Promise<void> {
 
       if (typeof detail === 'string') {
         errorMessage.value = detail
-      } else if (
-        Array.isArray(detail)
-        && typeof detail[0]?.msg === 'string'
-      ) {
+      } else if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') {
         errorMessage.value = detail[0].msg
       } else {
         errorMessage.value = 'Unable to create monitor'
@@ -203,76 +180,39 @@ async function submitMonitor(): Promise<void> {
       <div>
         <h1>Create monitor</h1>
 
-        <p>
-          Configure a new monitor for the selected organization.
-        </p>
+        <p>Configure a new monitor for the selected organization.</p>
       </div>
 
-      <RouterLink
-        class="monitor-create__back"
-        to="/monitors"
-      >
-        Back to monitors
-      </RouterLink>
+      <RouterLink class="monitor-create__back" to="/monitors"> Back to monitors </RouterLink>
     </div>
 
-    <div
-      v-if="!canCreateMonitor"
-      class="monitor-create__forbidden"
-    >
+    <div v-if="!canCreateMonitor" class="monitor-create__forbidden">
       Your organization role does not allow creating monitors.
     </div>
 
-    <form
-      v-else
-      class="monitor-form"
-      @submit.prevent="submitMonitor"
-    >
+    <form v-else class="monitor-form" @submit.prevent="submitMonitor">
       <div class="form-section">
         <h2>General</h2>
 
         <div class="form-field">
-          <label for="name">
-            Name
-          </label>
+          <label for="name"> Name </label>
 
-          <input
-            id="name"
-            v-model.trim="name"
-            type="text"
-            maxlength="100"
-            required
-          >
+          <input id="name" v-model.trim="name" type="text" maxlength="100" required />
         </div>
 
         <div class="form-field">
-          <label for="monitor-type">
-            Monitor type
-          </label>
+          <label for="monitor-type"> Monitor type </label>
 
-          <select
-            id="monitor-type"
-            v-model="monitorType"
-          >
-            <option value="http">
-              HTTP
-            </option>
+          <select id="monitor-type" v-model="monitorType">
+            <option value="http">HTTP</option>
 
-            <option value="tcp">
-              TCP
-            </option>
+            <option value="tcp">TCP</option>
 
-            <option value="dns">
-              DNS
-            </option>
+            <option value="dns">DNS</option>
 
-            <option value="tls">
-              TLS
-            </option>
+            <option value="tls">TLS</option>
 
-            <option value="icmp">
-              ICMP
-            </option>
+            <option value="icmp">ICMP</option>
           </select>
         </div>
       </div>
@@ -282,9 +222,7 @@ async function submitMonitor(): Promise<void> {
 
         <template v-if="monitorType === 'http'">
           <div class="form-field">
-            <label for="http-url">
-              URL
-            </label>
+            <label for="http-url"> URL </label>
 
             <input
               id="http-url"
@@ -292,52 +230,34 @@ async function submitMonitor(): Promise<void> {
               type="url"
               placeholder="https://example.com/health"
               required
-            >
+            />
           </div>
 
           <div class="form-field">
-            <label for="http-method">
-              Method
-            </label>
+            <label for="http-method"> Method </label>
 
-            <select
-              id="http-method"
-              v-model="httpMethod"
-            >
-              <option value="GET">
-                GET
-              </option>
+            <select id="http-method" v-model="httpMethod">
+              <option value="GET">GET</option>
 
-              <option value="HEAD">
-                HEAD
-              </option>
+              <option value="HEAD">HEAD</option>
             </select>
           </div>
 
           <div class="form-field">
-            <label for="expected-status-codes">
-              Expected status codes
-            </label>
+            <label for="expected-status-codes"> Expected status codes </label>
 
             <input
               id="expected-status-codes"
               v-model.trim="expectedStatusCodes"
               type="text"
               placeholder="200, 204"
-            >
+            />
 
-            <small>
-              Leave empty to use the backend default behavior.
-            </small>
+            <small> Leave empty to use the backend default behavior. </small>
           </div>
 
-          <div
-            v-if="httpMethod !== 'HEAD'"
-            class="form-field"
-          >
-            <label for="body-contains">
-              Response body contains
-            </label>
+          <div v-if="httpMethod !== 'HEAD'" class="form-field">
+            <label for="body-contains"> Response body contains </label>
 
             <input
               id="body-contains"
@@ -345,23 +265,17 @@ async function submitMonitor(): Promise<void> {
               type="text"
               maxlength="4096"
               placeholder="Optional text"
-            >
+            />
           </div>
 
           <label class="form-checkbox">
-            <input
-              v-model="followRedirects"
-              type="checkbox"
-            >
+            <input v-model="followRedirects" type="checkbox" />
 
             Follow redirects
           </label>
 
           <label class="form-checkbox">
-            <input
-              v-model="verifyTls"
-              type="checkbox"
-            >
+            <input v-model="verifyTls" type="checkbox" />
 
             Verify TLS certificate
           </label>
@@ -370,9 +284,7 @@ async function submitMonitor(): Promise<void> {
         <template v-else-if="monitorType === 'tcp'">
           <div class="form-grid">
             <div class="form-field">
-              <label for="tcp-host">
-                Host
-              </label>
+              <label for="tcp-host"> Host </label>
 
               <input
                 id="tcp-host"
@@ -381,13 +293,11 @@ async function submitMonitor(): Promise<void> {
                 maxlength="255"
                 placeholder="example.com"
                 required
-              >
+              />
             </div>
 
             <div class="form-field">
-              <label for="tcp-port">
-                Port
-              </label>
+              <label for="tcp-port"> Port </label>
 
               <input
                 id="tcp-port"
@@ -396,7 +306,7 @@ async function submitMonitor(): Promise<void> {
                 min="1"
                 max="65535"
                 required
-              >
+              />
             </div>
           </div>
         </template>
@@ -404,9 +314,7 @@ async function submitMonitor(): Promise<void> {
         <template v-else-if="monitorType === 'dns'">
           <div class="form-grid">
             <div class="form-field">
-              <label for="dns-host">
-                Host
-              </label>
+              <label for="dns-host"> Host </label>
 
               <input
                 id="dns-host"
@@ -415,37 +323,22 @@ async function submitMonitor(): Promise<void> {
                 maxlength="253"
                 placeholder="example.com"
                 required
-              >
+              />
             </div>
 
             <div class="form-field">
-              <label for="dns-record-type">
-                Record type
-              </label>
+              <label for="dns-record-type"> Record type </label>
 
-              <select
-                id="dns-record-type"
-                v-model="dnsRecordType"
-              >
-                <option value="A">
-                  A
-                </option>
+              <select id="dns-record-type" v-model="dnsRecordType">
+                <option value="A">A</option>
 
-                <option value="AAAA">
-                  AAAA
-                </option>
+                <option value="AAAA">AAAA</option>
 
-                <option value="CNAME">
-                  CNAME
-                </option>
+                <option value="CNAME">CNAME</option>
 
-                <option value="MX">
-                  MX
-                </option>
+                <option value="MX">MX</option>
 
-                <option value="TXT">
-                  TXT
-                </option>
+                <option value="TXT">TXT</option>
               </select>
             </div>
           </div>
@@ -454,9 +347,7 @@ async function submitMonitor(): Promise<void> {
         <template v-else-if="monitorType === 'tls'">
           <div class="form-grid">
             <div class="form-field">
-              <label for="tls-host">
-                Host
-              </label>
+              <label for="tls-host"> Host </label>
 
               <input
                 id="tls-host"
@@ -465,13 +356,11 @@ async function submitMonitor(): Promise<void> {
                 maxlength="253"
                 placeholder="example.com"
                 required
-              >
+              />
             </div>
 
             <div class="form-field">
-              <label for="tls-port">
-                Port
-              </label>
+              <label for="tls-port"> Port </label>
 
               <input
                 id="tls-port"
@@ -480,14 +369,12 @@ async function submitMonitor(): Promise<void> {
                 min="1"
                 max="65535"
                 required
-              >
+              />
             </div>
           </div>
 
           <div class="form-field">
-            <label for="tls-expiry-threshold">
-              Expiry threshold
-            </label>
+            <label for="tls-expiry-threshold"> Expiry threshold </label>
 
             <input
               id="tls-expiry-threshold"
@@ -496,19 +383,15 @@ async function submitMonitor(): Promise<void> {
               min="0"
               max="365"
               required
-            >
+            />
 
-            <small>
-              Days before certificate expiration.
-            </small>
+            <small> Days before certificate expiration. </small>
           </div>
         </template>
 
         <template v-else-if="monitorType === 'icmp'">
           <div class="form-field">
-            <label for="icmp-host">
-              Host
-            </label>
+            <label for="icmp-host"> Host </label>
 
             <input
               id="icmp-host"
@@ -517,7 +400,7 @@ async function submitMonitor(): Promise<void> {
               maxlength="253"
               placeholder="example.com"
               required
-            >
+            />
           </div>
         </template>
       </div>
@@ -527,9 +410,7 @@ async function submitMonitor(): Promise<void> {
 
         <div class="form-grid">
           <div class="form-field">
-            <label for="interval">
-              Interval
-            </label>
+            <label for="interval"> Interval </label>
 
             <input
               id="interval"
@@ -538,15 +419,13 @@ async function submitMonitor(): Promise<void> {
               min="10"
               max="3600"
               required
-            >
+            />
 
             <small>Seconds between checks.</small>
           </div>
 
           <div class="form-field">
-            <label for="timeout">
-              Timeout
-            </label>
+            <label for="timeout"> Timeout </label>
 
             <input
               id="timeout"
@@ -555,15 +434,13 @@ async function submitMonitor(): Promise<void> {
               min="1"
               max="60"
               required
-            >
+            />
 
             <small>Maximum check duration in seconds.</small>
           </div>
 
           <div class="form-field">
-            <label for="failure-threshold">
-              Failure threshold
-            </label>
+            <label for="failure-threshold"> Failure threshold </label>
 
             <input
               id="failure-threshold"
@@ -572,17 +449,13 @@ async function submitMonitor(): Promise<void> {
               min="1"
               max="10"
               required
-            >
+            />
 
-            <small>
-              Consecutive failures before marking the monitor down.
-            </small>
+            <small> Consecutive failures before marking the monitor down. </small>
           </div>
 
           <div class="form-field">
-            <label for="recovery-threshold">
-              Recovery threshold
-            </label>
+            <label for="recovery-threshold"> Recovery threshold </label>
 
             <input
               id="recovery-threshold"
@@ -591,36 +464,21 @@ async function submitMonitor(): Promise<void> {
               min="1"
               max="10"
               required
-            >
+            />
 
-            <small>
-              Consecutive successful checks before recovery.
-            </small>
+            <small> Consecutive successful checks before recovery. </small>
           </div>
         </div>
       </div>
 
-      <p
-        v-if="errorMessage"
-        class="form-error"
-        role="alert"
-      >
+      <p v-if="errorMessage" class="form-error" role="alert">
         {{ errorMessage }}
       </p>
 
       <div class="monitor-form__actions">
-        <RouterLink
-          class="button-secondary"
-          to="/monitors"
-        >
-          Cancel
-        </RouterLink>
+        <RouterLink class="button-secondary" to="/monitors"> Cancel </RouterLink>
 
-        <button
-          class="button-primary"
-          type="submit"
-          :disabled="isSubmitting"
-        >
+        <button class="button-primary" type="submit" :disabled="isSubmitting">
           {{ isSubmitting ? 'Creating...' : 'Create monitor' }}
         </button>
       </div>

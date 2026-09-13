@@ -25,45 +25,33 @@ export const useOrganizationStore = defineStore('organizations', {
       }
 
       return (
-        state.organizations.find(
-          (organization) => {
-            return organization.id === state.currentOrganizationId
-          },
-        ) ?? null
+        state.organizations.find((organization) => {
+          return organization.id === state.currentOrganizationId
+        }) ?? null
       )
     },
   },
 
   actions: {
     async loadOrganizations(): Promise<void> {
-      const response = await apiClient.get<Organization[]>(
-        '/api/v1/organizations',
-      )
+      const response = await apiClient.get<Organization[]>('/api/v1/organizations')
 
       this.organizations = response.data
 
-      const storedOrganizationId = localStorage.getItem(
-        ORGANIZATION_STORAGE_KEY,
-      )
+      const storedOrganizationId = localStorage.getItem(ORGANIZATION_STORAGE_KEY)
 
-      const storedOrganizationExists = this.organizations.some(
-        (organization) => {
-          return organization.id === storedOrganizationId
-        },
-      )
+      const storedOrganizationExists = this.organizations.some((organization) => {
+        return organization.id === storedOrganizationId
+      })
 
       if (storedOrganizationId && storedOrganizationExists) {
         this.currentOrganizationId = storedOrganizationId
       } else {
-        this.currentOrganizationId =
-          this.organizations[0]?.id ?? null
+        this.currentOrganizationId = this.organizations[0]?.id ?? null
       }
 
       if (this.currentOrganizationId) {
-        localStorage.setItem(
-          ORGANIZATION_STORAGE_KEY,
-          this.currentOrganizationId,
-        )
+        localStorage.setItem(ORGANIZATION_STORAGE_KEY, this.currentOrganizationId)
       } else {
         localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
       }
@@ -72,11 +60,9 @@ export const useOrganizationStore = defineStore('organizations', {
     },
 
     selectOrganization(organizationId: string): void {
-      const organizationExists = this.organizations.some(
-        (organization) => {
-          return organization.id === organizationId
-        },
-      )
+      const organizationExists = this.organizations.some((organization) => {
+        return organization.id === organizationId
+      })
 
       if (!organizationExists) {
         return
@@ -84,10 +70,7 @@ export const useOrganizationStore = defineStore('organizations', {
 
       this.currentOrganizationId = organizationId
 
-      localStorage.setItem(
-        ORGANIZATION_STORAGE_KEY,
-        organizationId,
-      )
+      localStorage.setItem(ORGANIZATION_STORAGE_KEY, organizationId)
     },
 
     clear(): void {

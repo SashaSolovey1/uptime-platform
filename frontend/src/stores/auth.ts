@@ -32,19 +32,13 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async register(data: RegisterRequest): Promise<RegisterResponse> {
-      const response = await apiClient.post<RegisterResponse>(
-        '/api/v1/auth/register',
-        data,
-      )
+      const response = await apiClient.post<RegisterResponse>('/api/v1/auth/register', data)
 
       return response.data
     },
 
     async login(credentials: LoginRequest): Promise<void> {
-      const response = await apiClient.post<TokenResponse>(
-        '/api/v1/auth/login',
-        credentials,
-      )
+      const response = await apiClient.post<TokenResponse>('/api/v1/auth/login', credentials)
 
       this.accessToken = response.data.access_token
       setApiAccessToken(this.accessToken)
@@ -59,9 +53,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchMe(): Promise<void> {
-      const response = await apiClient.get<MeResponse>(
-        '/api/v1/auth/me',
-      )
+      const response = await apiClient.get<MeResponse>('/api/v1/auth/me')
 
       this.user = response.data
     },
@@ -73,9 +65,7 @@ export const useAuthStore = defineStore('auth', {
       }
 
       refreshPromise = (async () => {
-        const response = await apiClient.post<TokenResponse>(
-          '/api/v1/auth/refresh',
-        )
+        const response = await apiClient.post<TokenResponse>('/api/v1/auth/refresh')
 
         this.accessToken = response.data.access_token
         setApiAccessToken(this.accessToken)

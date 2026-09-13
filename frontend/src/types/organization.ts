@@ -1,8 +1,4 @@
-export type OrganizationRole =
-  | 'owner'
-  | 'admin'
-  | 'member'
-  | 'viewer'
+export type OrganizationRole = 'owner' | 'admin' | 'member' | 'viewer'
 
 export interface Organization {
   id: string

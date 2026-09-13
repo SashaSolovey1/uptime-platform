@@ -59,28 +59,15 @@ async function submitLogin(): Promise<void> {
         <p>Sign in to Uptime Platform</p>
       </div>
 
-      <form
-        class="login-form"
-        @submit.prevent="submitLogin"
-      >
+      <form class="login-form" @submit.prevent="submitLogin">
         <div class="form-field">
-          <label for="email">
-            Email
-          </label>
+          <label for="email"> Email </label>
 
-          <input
-            id="email"
-            v-model.trim="email"
-            type="email"
-            autocomplete="email"
-            required
-          >
+          <input id="email" v-model.trim="email" type="email" autocomplete="email" required />
         </div>
 
         <div class="form-field">
-          <label for="password">
-            Password
-          </label>
+          <label for="password"> Password </label>
 
           <input
             id="password"
@@ -88,30 +75,21 @@ async function submitLogin(): Promise<void> {
             type="password"
             autocomplete="current-password"
             required
-          >
+          />
         </div>
 
-        <p
-          v-if="errorMessage"
-          class="form-error"
-          role="alert"
-        >
+        <p v-if="errorMessage" class="form-error" role="alert">
           {{ errorMessage }}
         </p>
 
-        <button
-          type="submit"
-          :disabled="isSubmitting"
-        >
+        <button type="submit" :disabled="isSubmitting">
           {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
         </button>
       </form>
 
       <p class="login-card__footer">
         Don't have an account?
-        <RouterLink to="/register">
-          Create one
-        </RouterLink>
+        <RouterLink to="/register"> Create one </RouterLink>
       </p>
     </div>
   </main>

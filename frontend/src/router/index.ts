@@ -8,6 +8,7 @@ import MonitorsView from '@/views/MonitorsView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import MonitorCreateView from '@/views/MonitorCreateView.vue'
 import MonitorEditView from '@/views/MonitorEditView.vue'
+import MonitorDetailsView from '@/views/MonitorDetailsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,10 +51,15 @@ const router = createRouter({
           component: MonitorCreateView,
         },
         {
-        path: 'monitors/:monitorId/edit',
-        name: 'monitor-edit',
-        component: MonitorEditView,
-      },
+          path: 'monitors/:monitorId/edit',
+          name: 'monitor-edit',
+          component: MonitorEditView,
+        },
+        {
+          path: 'monitors/:monitorId',
+          name: 'monitor-details',
+          component: MonitorDetailsView,
+        },
       ],
     },
   ],
@@ -75,10 +81,7 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (
-    authStore.isAuthenticated
-    && (to.name === 'login' || to.name === 'register')
-  ) {
+  if (authStore.isAuthenticated && (to.name === 'login' || to.name === 'register')) {
     return {
       name: 'dashboard',
     }

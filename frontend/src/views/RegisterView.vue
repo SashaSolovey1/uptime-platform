@@ -61,14 +61,9 @@ async function submitRegistration(): Promise<void> {
         <p>Create your Uptime Platform account</p>
       </div>
 
-      <form
-        class="register-form"
-        @submit.prevent="submitRegistration"
-      >
+      <form class="register-form" @submit.prevent="submitRegistration">
         <div class="form-field">
-          <label for="organization-name">
-            Organization name
-          </label>
+          <label for="organization-name"> Organization name </label>
 
           <input
             id="organization-name"
@@ -77,27 +72,17 @@ async function submitRegistration(): Promise<void> {
             autocomplete="organization"
             maxlength="100"
             required
-          >
+          />
         </div>
 
         <div class="form-field">
-          <label for="email">
-            Email
-          </label>
+          <label for="email"> Email </label>
 
-          <input
-            id="email"
-            v-model.trim="email"
-            type="email"
-            autocomplete="email"
-            required
-          >
+          <input id="email" v-model.trim="email" type="email" autocomplete="email" required />
         </div>
 
         <div class="form-field">
-          <label for="password">
-            Password
-          </label>
+          <label for="password"> Password </label>
 
           <input
             id="password"
@@ -107,13 +92,11 @@ async function submitRegistration(): Promise<void> {
             minlength="8"
             maxlength="128"
             required
-          >
+          />
         </div>
 
         <div class="form-field">
-          <label for="password-confirmation">
-            Confirm password
-          </label>
+          <label for="password-confirmation"> Confirm password </label>
 
           <input
             id="password-confirmation"
@@ -123,21 +106,14 @@ async function submitRegistration(): Promise<void> {
             minlength="8"
             maxlength="128"
             required
-          >
+          />
         </div>
 
-        <p
-          v-if="errorMessage"
-          class="form-error"
-          role="alert"
-        >
+        <p v-if="errorMessage" class="form-error" role="alert">
           {{ errorMessage }}
         </p>
 
-        <button
-          type="submit"
-          :disabled="isSubmitting"
-        >
+        <button type="submit" :disabled="isSubmitting">
           {{ isSubmitting ? 'Creating account...' : 'Create account' }}
         </button>
       </form>
@@ -145,9 +121,7 @@ async function submitRegistration(): Promise<void> {
       <p class="register-card__footer">
         Already have an account?
 
-        <RouterLink to="/login">
-          Sign in
-        </RouterLink>
+        <RouterLink to="/login"> Sign in </RouterLink>
       </p>
     </div>
   </main>

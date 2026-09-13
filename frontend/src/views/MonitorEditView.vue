@@ -5,12 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useMonitorStore } from '@/stores/monitors'
 import { useOrganizationStore } from '@/stores/organizations'
-import type {
-  DnsRecordType,
-  HttpMethod,
-  Monitor,
-  MonitorUpdate,
-} from '@/types/monitor'
+import type { DnsRecordType, HttpMethod, Monitor, MonitorUpdate } from '@/types/monitor'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,11 +50,7 @@ const errorMessage = ref<string | null>(null)
 const canUpdateMonitor = computed(() => {
   const role = organizationStore.currentOrganization?.role
 
-  return (
-    role === 'owner'
-    || role === 'admin'
-    || role === 'member'
-  )
+  return role === 'owner' || role === 'admin' || role === 'member'
 })
 
 watch(httpMethod, (method) => {
@@ -81,17 +72,13 @@ function populateForm(loadedMonitor: Monitor): void {
       httpUrl.value = loadedMonitor.config.url
       httpMethod.value = loadedMonitor.config.method
 
-      expectedStatusCodes.value =
-        loadedMonitor.config.expected_status_codes?.join(', ') ?? ''
+      expectedStatusCodes.value = loadedMonitor.config.expected_status_codes?.join(', ') ?? ''
 
-      bodyContains.value =
-        loadedMonitor.config.body_contains ?? ''
+      bodyContains.value = loadedMonitor.config.body_contains ?? ''
 
-      followRedirects.value =
-        loadedMonitor.config.follow_redirects
+      followRedirects.value = loadedMonitor.config.follow_redirects
 
-      verifyTls.value =
-        loadedMonitor.config.verify_tls
+      verifyTls.value = loadedMonitor.config.verify_tls
 
       break
 
@@ -109,8 +96,7 @@ function populateForm(loadedMonitor: Monitor): void {
       tlsHost.value = loadedMonitor.config.host
       tlsPort.value = loadedMonitor.config.port
 
-      tlsExpiryThresholdDays.value =
-        loadedMonitor.config.expiry_threshold_days
+      tlsExpiryThresholdDays.value = loadedMonitor.config.expiry_threshold_days
 
       break
 
@@ -152,24 +138,16 @@ function parseExpectedStatusCodes(): number[] | null {
     return null
   }
 
-  const statusCodes = value
-    .split(',')
-    .map((statusCode) => {
-      return Number(statusCode.trim())
-    })
+  const statusCodes = value.split(',').map((statusCode) => {
+    return Number(statusCode.trim())
+  })
 
   const hasInvalidStatusCode = statusCodes.some((statusCode) => {
-    return (
-      !Number.isInteger(statusCode)
-      || statusCode < 100
-      || statusCode > 599
-    )
+    return !Number.isInteger(statusCode) || statusCode < 100 || statusCode > 599
   })
 
   if (hasInvalidStatusCode) {
-    throw new Error(
-      'Expected status codes must be numbers between 100 and 599',
-    )
+    throw new Error('Expected status codes must be numbers between 100 and 599')
   }
 
   return statusCodes
@@ -196,10 +174,7 @@ function buildMonitorUpdate(): MonitorUpdate {
           url: httpUrl.value.trim(),
           method: httpMethod.value,
           expected_status_codes: parseExpectedStatusCodes(),
-          body_contains:
-            httpMethod.value === 'HEAD'
-              ? null
-              : bodyContains.value.trim() || null,
+          body_contains: httpMethod.value === 'HEAD' ? null : bodyContains.value.trim() || null,
           follow_redirects: followRedirects.value,
           verify_tls: verifyTls.value,
         },
@@ -254,10 +229,7 @@ async function submitMonitor(): Promise<void> {
   try {
     const data = buildMonitorUpdate()
 
-    await monitorStore.updateMonitor(
-      monitor.value.id,
-      data,
-    )
+    await monitorStore.updateMonitor(monitor.value.id, data)
 
     await router.push('/monitors')
   } catch (error) {
@@ -266,10 +238,7 @@ async function submitMonitor(): Promise<void> {
 
       if (typeof detail === 'string') {
         errorMessage.value = detail
-      } else if (
-        Array.isArray(detail)
-        && typeof detail[0]?.msg === 'string'
-      ) {
+      } else if (Array.isArray(detail) && typeof detail[0]?.msg === 'string') {
         errorMessage.value = detail[0].msg
       } else {
         errorMessage.value = 'Unable to update monitor'
@@ -332,73 +301,38 @@ onMounted(async () => {
       <div>
         <h1>Edit monitor</h1>
 
-        <p>
-          Update monitor configuration and check settings.
-        </p>
+        <p>Update monitor configuration and check settings.</p>
       </div>
 
-      <RouterLink
-        class="monitor-edit__back"
-        to="/monitors"
-      >
-        Back to monitors
-      </RouterLink>
+      <RouterLink class="monitor-edit__back" to="/monitors"> Back to monitors </RouterLink>
     </div>
 
-    <p v-if="loading">
-      Loading monitor...
-    </p>
+    <p v-if="loading">Loading monitor...</p>
 
-    <div
-      v-else-if="loadError"
-      class="monitor-edit__error"
-    >
+    <div v-else-if="loadError" class="monitor-edit__error">
       {{ loadError }}
     </div>
 
-    <div
-      v-else-if="!canUpdateMonitor"
-      class="monitor-edit__forbidden"
-    >
+    <div v-else-if="!canUpdateMonitor" class="monitor-edit__forbidden">
       Your organization role does not allow updating monitors.
     </div>
 
-    <form
-      v-else-if="monitor"
-      class="monitor-form"
-      @submit.prevent="submitMonitor"
-    >
+    <form v-else-if="monitor" class="monitor-form" @submit.prevent="submitMonitor">
       <div class="form-section">
         <h2>General</h2>
 
         <div class="form-field">
-          <label for="name">
-            Name
-          </label>
+          <label for="name"> Name </label>
 
-          <input
-            id="name"
-            v-model.trim="name"
-            type="text"
-            maxlength="100"
-            required
-          >
+          <input id="name" v-model.trim="name" type="text" maxlength="100" required />
         </div>
 
         <div class="form-field">
-          <label>
-            Monitor type
-          </label>
+          <label> Monitor type </label>
 
-          <input
-            :value="monitor.monitor_type.toUpperCase()"
-            type="text"
-            disabled
-          >
+          <input :value="monitor.monitor_type.toUpperCase()" type="text" disabled />
 
-          <small>
-            Monitor type cannot be changed after creation.
-          </small>
+          <small> Monitor type cannot be changed after creation. </small>
         </div>
       </div>
 
@@ -407,80 +341,46 @@ onMounted(async () => {
 
         <template v-if="monitor.monitor_type === 'http'">
           <div class="form-field">
-            <label for="http-url">
-              URL
-            </label>
+            <label for="http-url"> URL </label>
 
-            <input
-              id="http-url"
-              v-model.trim="httpUrl"
-              type="url"
-              required
-            >
+            <input id="http-url" v-model.trim="httpUrl" type="url" required />
           </div>
 
           <div class="form-field">
-            <label for="http-method">
-              Method
-            </label>
+            <label for="http-method"> Method </label>
 
-            <select
-              id="http-method"
-              v-model="httpMethod"
-            >
-              <option value="GET">
-                GET
-              </option>
+            <select id="http-method" v-model="httpMethod">
+              <option value="GET">GET</option>
 
-              <option value="HEAD">
-                HEAD
-              </option>
+              <option value="HEAD">HEAD</option>
             </select>
           </div>
 
           <div class="form-field">
-            <label for="expected-status-codes">
-              Expected status codes
-            </label>
+            <label for="expected-status-codes"> Expected status codes </label>
 
             <input
               id="expected-status-codes"
               v-model.trim="expectedStatusCodes"
               type="text"
               placeholder="200, 204"
-            >
+            />
           </div>
 
-          <div
-            v-if="httpMethod !== 'HEAD'"
-            class="form-field"
-          >
-            <label for="body-contains">
-              Response body contains
-            </label>
+          <div v-if="httpMethod !== 'HEAD'" class="form-field">
+            <label for="body-contains"> Response body contains </label>
 
-            <input
-              id="body-contains"
-              v-model="bodyContains"
-              type="text"
-              maxlength="4096"
-            >
+            <input id="body-contains" v-model="bodyContains" type="text" maxlength="4096" />
           </div>
 
           <label class="form-checkbox">
-            <input
-              v-model="followRedirects"
-              type="checkbox"
-            >
+            <input v-model="followRedirects" type="checkbox" />
 
             Follow redirects
           </label>
 
           <label class="form-checkbox">
-            <input
-              v-model="verifyTls"
-              type="checkbox"
-            >
+            <input v-model="verifyTls" type="checkbox" />
 
             Verify TLS certificate
           </label>
@@ -489,23 +389,13 @@ onMounted(async () => {
         <template v-else-if="monitor.monitor_type === 'tcp'">
           <div class="form-grid">
             <div class="form-field">
-              <label for="tcp-host">
-                Host
-              </label>
+              <label for="tcp-host"> Host </label>
 
-              <input
-                id="tcp-host"
-                v-model.trim="tcpHost"
-                type="text"
-                maxlength="255"
-                required
-              >
+              <input id="tcp-host" v-model.trim="tcpHost" type="text" maxlength="255" required />
             </div>
 
             <div class="form-field">
-              <label for="tcp-port">
-                Port
-              </label>
+              <label for="tcp-port"> Port </label>
 
               <input
                 id="tcp-port"
@@ -514,7 +404,7 @@ onMounted(async () => {
                 min="1"
                 max="65535"
                 required
-              >
+              />
             </div>
           </div>
         </template>
@@ -522,47 +412,24 @@ onMounted(async () => {
         <template v-else-if="monitor.monitor_type === 'dns'">
           <div class="form-grid">
             <div class="form-field">
-              <label for="dns-host">
-                Host
-              </label>
+              <label for="dns-host"> Host </label>
 
-              <input
-                id="dns-host"
-                v-model.trim="dnsHost"
-                type="text"
-                maxlength="253"
-                required
-              >
+              <input id="dns-host" v-model.trim="dnsHost" type="text" maxlength="253" required />
             </div>
 
             <div class="form-field">
-              <label for="dns-record-type">
-                Record type
-              </label>
+              <label for="dns-record-type"> Record type </label>
 
-              <select
-                id="dns-record-type"
-                v-model="dnsRecordType"
-              >
-                <option value="A">
-                  A
-                </option>
+              <select id="dns-record-type" v-model="dnsRecordType">
+                <option value="A">A</option>
 
-                <option value="AAAA">
-                  AAAA
-                </option>
+                <option value="AAAA">AAAA</option>
 
-                <option value="CNAME">
-                  CNAME
-                </option>
+                <option value="CNAME">CNAME</option>
 
-                <option value="MX">
-                  MX
-                </option>
+                <option value="MX">MX</option>
 
-                <option value="TXT">
-                  TXT
-                </option>
+                <option value="TXT">TXT</option>
               </select>
             </div>
           </div>
@@ -571,23 +438,13 @@ onMounted(async () => {
         <template v-else-if="monitor.monitor_type === 'tls'">
           <div class="form-grid">
             <div class="form-field">
-              <label for="tls-host">
-                Host
-              </label>
+              <label for="tls-host"> Host </label>
 
-              <input
-                id="tls-host"
-                v-model.trim="tlsHost"
-                type="text"
-                maxlength="253"
-                required
-              >
+              <input id="tls-host" v-model.trim="tlsHost" type="text" maxlength="253" required />
             </div>
 
             <div class="form-field">
-              <label for="tls-port">
-                Port
-              </label>
+              <label for="tls-port"> Port </label>
 
               <input
                 id="tls-port"
@@ -596,14 +453,12 @@ onMounted(async () => {
                 min="1"
                 max="65535"
                 required
-              >
+              />
             </div>
           </div>
 
           <div class="form-field">
-            <label for="tls-expiry-threshold">
-              Expiry threshold
-            </label>
+            <label for="tls-expiry-threshold"> Expiry threshold </label>
 
             <input
               id="tls-expiry-threshold"
@@ -612,27 +467,17 @@ onMounted(async () => {
               min="0"
               max="365"
               required
-            >
+            />
 
-            <small>
-              Days before certificate expiration.
-            </small>
+            <small> Days before certificate expiration. </small>
           </div>
         </template>
 
         <template v-else-if="monitor.monitor_type === 'icmp'">
           <div class="form-field">
-            <label for="icmp-host">
-              Host
-            </label>
+            <label for="icmp-host"> Host </label>
 
-            <input
-              id="icmp-host"
-              v-model.trim="icmpHost"
-              type="text"
-              maxlength="253"
-              required
-            >
+            <input id="icmp-host" v-model.trim="icmpHost" type="text" maxlength="253" required />
           </div>
         </template>
       </div>
@@ -642,9 +487,7 @@ onMounted(async () => {
 
         <div class="form-grid">
           <div class="form-field">
-            <label for="interval">
-              Interval
-            </label>
+            <label for="interval"> Interval </label>
 
             <input
               id="interval"
@@ -653,15 +496,13 @@ onMounted(async () => {
               min="10"
               max="3600"
               required
-            >
+            />
 
             <small>Seconds between checks.</small>
           </div>
 
           <div class="form-field">
-            <label for="timeout">
-              Timeout
-            </label>
+            <label for="timeout"> Timeout </label>
 
             <input
               id="timeout"
@@ -670,15 +511,13 @@ onMounted(async () => {
               min="1"
               max="60"
               required
-            >
+            />
 
             <small>Maximum check duration in seconds.</small>
           </div>
 
           <div class="form-field">
-            <label for="failure-threshold">
-              Failure threshold
-            </label>
+            <label for="failure-threshold"> Failure threshold </label>
 
             <input
               id="failure-threshold"
@@ -687,13 +526,11 @@ onMounted(async () => {
               min="1"
               max="10"
               required
-            >
+            />
           </div>
 
           <div class="form-field">
-            <label for="recovery-threshold">
-              Recovery threshold
-            </label>
+            <label for="recovery-threshold"> Recovery threshold </label>
 
             <input
               id="recovery-threshold"
@@ -702,16 +539,12 @@ onMounted(async () => {
               min="1"
               max="10"
               required
-            >
+            />
           </div>
         </div>
       </div>
 
-      <p
-        v-if="errorMessage"
-        class="form-error"
-        role="alert"
-      >
+      <p v-if="errorMessage" class="form-error" role="alert">
         {{ errorMessage }}
       </p>
 
@@ -726,18 +559,9 @@ onMounted(async () => {
         </button>
 
         <div class="monitor-form__actions-right">
-          <RouterLink
-            class="button-secondary"
-            to="/monitors"
-          >
-            Cancel
-          </RouterLink>
+          <RouterLink class="button-secondary" to="/monitors"> Cancel </RouterLink>
 
-          <button
-            class="button-primary"
-            type="submit"
-            :disabled="isSubmitting || isDeleting"
-          >
+          <button class="button-primary" type="submit" :disabled="isSubmitting || isDeleting">
             {{ isSubmitting ? 'Saving...' : 'Save changes' }}
           </button>
         </div>

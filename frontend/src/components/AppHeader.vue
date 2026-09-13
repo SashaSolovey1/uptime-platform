@@ -40,28 +40,13 @@ async function handleLogout(): Promise<void> {
 <template>
   <header class="app-header">
     <div class="app-header__content">
-      <RouterLink
-        class="app-header__logo"
-        to="/dashboard"
-      >
-        Uptime Platform
-      </RouterLink>
+      <RouterLink class="app-header__logo" to="/dashboard"> Uptime Platform </RouterLink>
 
-    <nav class="app-header__nav">
-      <RouterLink
-        class="app-header__link"
-        to="/dashboard"
-      >
-        Dashboard
-      </RouterLink>
+      <nav class="app-header__nav">
+        <RouterLink class="app-header__link" to="/dashboard"> Dashboard </RouterLink>
 
-      <RouterLink
-        class="app-header__link"
-        to="/monitors"
-      >
-        Monitors
-      </RouterLink>
-    </nav>
+        <RouterLink class="app-header__link" to="/monitors"> Monitors </RouterLink>
+      </nav>
 
       <div class="app-header__user">
         <select
@@ -79,17 +64,11 @@ async function handleLogout(): Promise<void> {
           </option>
         </select>
 
-        <span
-          v-if="organizationStore.currentOrganization"
-          class="app-header__role"
-        >
+        <span v-if="organizationStore.currentOrganization" class="app-header__role">
           {{ organizationStore.currentOrganization.role }}
         </span>
 
-        <span
-          v-if="authStore.user"
-          class="app-header__email"
-        >
+        <span v-if="authStore.user" class="app-header__email">
           {{ authStore.user.email }}
         </span>
 
@@ -104,11 +83,7 @@ async function handleLogout(): Promise<void> {
       </div>
     </div>
 
-    <p
-      v-if="logoutError"
-      class="app-header__error"
-      role="alert"
-    >
+    <p v-if="logoutError" class="app-header__error" role="alert">
       {{ logoutError }}
     </p>
   </header>

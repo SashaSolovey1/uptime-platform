@@ -22,21 +22,13 @@ onMounted(async () => {
     <AppHeader />
 
     <main class="app-layout__content">
-      <p
-        v-if="loadError"
-        class="app-layout__error"
-      >
+      <p v-if="loadError" class="app-layout__error">
         {{ loadError }}
       </p>
 
-      <p v-else-if="!organizationStore.initialized">
-        Loading...
-      </p>
+      <p v-else-if="!organizationStore.initialized">Loading...</p>
 
-      <p
-        v-else-if="!organizationStore.currentOrganization"
-        class="app-layout__empty"
-      >
+      <p v-else-if="!organizationStore.currentOrganization" class="app-layout__empty">
         No organizations available.
       </p>
 

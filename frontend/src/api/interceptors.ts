@@ -1,7 +1,4 @@
-import type {
-  AxiosError,
-  InternalAxiosRequestConfig,
-} from 'axios'
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { Router } from 'vue-router'
 
 import apiClient from '@/api/client'
@@ -10,9 +7,7 @@ import type { useOrganizationStore } from '@/stores/organizations'
 
 type AuthStore = ReturnType<typeof useAuthStore>
 
-type OrganizationStore = ReturnType<
-  typeof useOrganizationStore
->
+type OrganizationStore = ReturnType<typeof useOrganizationStore>
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
@@ -42,10 +37,7 @@ export function setupApiInterceptors(
 ): void {
   apiClient.interceptors.request.use((config) => {
     if (organizationStore.currentOrganizationId) {
-      config.headers.set(
-        'X-Organization-ID',
-        organizationStore.currentOrganizationId,
-      )
+      config.headers.set('X-Organization-ID', organizationStore.currentOrganizationId)
     } else {
       config.headers.delete('X-Organization-ID')
     }
@@ -57,14 +49,13 @@ export function setupApiInterceptors(
     (response) => response,
 
     async (error: AxiosError) => {
-      const request =
-        error.config as RetryableRequestConfig | undefined
+      const request = error.config as RetryableRequestConfig | undefined
 
       if (
-        error.response?.status !== 401
-        || !request
-        || request._retry
-        || shouldSkipRefresh(request.url)
+        error.response?.status !== 401 ||
+        !request ||
+        request._retry ||
+        shouldSkipRefresh(request.url)
       ) {
         return Promise.reject(error)
       }
@@ -78,10 +69,7 @@ export function setupApiInterceptors(
           return Promise.reject(error)
         }
 
-        request.headers.set(
-          'Authorization',
-          `Bearer ${authStore.accessToken}`,
-        )
+        request.headers.set('Authorization', `Bearer ${authStore.accessToken}`)
 
         return apiClient(request)
       } catch {
