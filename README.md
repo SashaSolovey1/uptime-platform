@@ -541,7 +541,6 @@ Vue 3 · TypeScript · Vite · Vue Router · Pinia · Axios · ESLint · Prettie
 
 * Organization selector and organization-scoped API integration
 * Dashboard
-* Monitor details, check history, and statistics
 * Incident management
 * Maintenance window management
 * Notification destination management
