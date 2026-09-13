@@ -1,0 +1,101 @@
+import { defineStore } from 'pinia'
+
+import apiClient from '@/api/client'
+import type { Organization } from '@/types/organization'
+
+const ORGANIZATION_STORAGE_KEY = 'uptime-platform.organization-id'
+
+interface OrganizationState {
+  organizations: Organization[]
+  currentOrganizationId: string | null
+  initialized: boolean
+}
+
+export const useOrganizationStore = defineStore('organizations', {
+  state: (): OrganizationState => ({
+    organizations: [],
+    currentOrganizationId: null,
+    initialized: false,
+  }),
+
+  getters: {
+    currentOrganization(state): Organization | null {
+      if (!state.currentOrganizationId) {
+        return null
+      }
+
+      return (
+        state.organizations.find(
+          (organization) => {
+            return organization.id === state.currentOrganizationId
+          },
+        ) ?? null
+      )
+    },
+  },
+
+  actions: {
+    async loadOrganizations(): Promise<void> {
+      const response = await apiClient.get<Organization[]>(
+        '/api/v1/organizations',
+      )
+
+      this.organizations = response.data
+
+      const storedOrganizationId = localStorage.getItem(
+        ORGANIZATION_STORAGE_KEY,
+      )
+
+      const storedOrganizationExists = this.organizations.some(
+        (organization) => {
+          return organization.id === storedOrganizationId
+        },
+      )
+
+      if (storedOrganizationId && storedOrganizationExists) {
+        this.currentOrganizationId = storedOrganizationId
+      } else {
+        this.currentOrganizationId =
+          this.organizations[0]?.id ?? null
+      }
+
+      if (this.currentOrganizationId) {
+        localStorage.setItem(
+          ORGANIZATION_STORAGE_KEY,
+          this.currentOrganizationId,
+        )
+      } else {
+        localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
+      }
+
+      this.initialized = true
+    },
+
+    selectOrganization(organizationId: string): void {
+      const organizationExists = this.organizations.some(
+        (organization) => {
+          return organization.id === organizationId
+        },
+      )
+
+      if (!organizationExists) {
+        return
+      }
+
+      this.currentOrganizationId = organizationId
+
+      localStorage.setItem(
+        ORGANIZATION_STORAGE_KEY,
+        organizationId,
+      )
+    },
+
+    clear(): void {
+      this.organizations = []
+      this.currentOrganizationId = null
+      this.initialized = false
+
+      localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
+    },
+  },
+})

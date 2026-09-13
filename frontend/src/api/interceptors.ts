@@ -6,8 +6,13 @@ import type { Router } from 'vue-router'
 
 import apiClient from '@/api/client'
 import type { useAuthStore } from '@/stores/auth'
+import type { useOrganizationStore } from '@/stores/organizations'
 
 type AuthStore = ReturnType<typeof useAuthStore>
+
+type OrganizationStore = ReturnType<
+  typeof useOrganizationStore
+>
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
@@ -32,13 +37,28 @@ function shouldSkipRefresh(url?: string): boolean {
 
 export function setupApiInterceptors(
   authStore: AuthStore,
+  organizationStore: OrganizationStore,
   router: Router,
 ): void {
+  apiClient.interceptors.request.use((config) => {
+    if (organizationStore.currentOrganizationId) {
+      config.headers.set(
+        'X-Organization-ID',
+        organizationStore.currentOrganizationId,
+      )
+    } else {
+      config.headers.delete('X-Organization-ID')
+    }
+
+    return config
+  })
+
   apiClient.interceptors.response.use(
     (response) => response,
 
     async (error: AxiosError) => {
-      const request = error.config as RetryableRequestConfig | undefined
+      const request =
+        error.config as RetryableRequestConfig | undefined
 
       if (
         error.response?.status !== 401
@@ -66,6 +86,7 @@ export function setupApiInterceptors(
         return apiClient(request)
       } catch {
         authStore.clearAuth()
+        organizationStore.clear()
 
         const currentRoute = router.currentRoute.value
 

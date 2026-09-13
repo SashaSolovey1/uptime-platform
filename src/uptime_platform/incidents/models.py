@@ -6,6 +6,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Uuid,
+    text,
 )
 from sqlalchemy import (
     Enum as SqlEnum,
@@ -57,5 +58,11 @@ class IncidentModel(Base):
             "ix_incidents_monitor_id_status",
             "monitor_id",
             "status",
+        ),
+        Index(
+            "uq_incidents_one_open_per_monitor",
+            "monitor_id",
+            unique=True,
+            postgresql_where=text("status = 'open'"),
         ),
     )

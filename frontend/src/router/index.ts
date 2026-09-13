@@ -4,7 +4,10 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import DashboardView from '@/views/DashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
+import MonitorsView from '@/views/MonitorsView.vue'
 import RegisterView from '@/views/RegisterView.vue'
+import MonitorCreateView from '@/views/MonitorCreateView.vue'
+import MonitorEditView from '@/views/MonitorEditView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +39,21 @@ const router = createRouter({
           name: 'dashboard',
           component: DashboardView,
         },
+        {
+          path: 'monitors',
+          name: 'monitors',
+          component: MonitorsView,
+        },
+        {
+          path: 'monitors/new',
+          name: 'monitor-create',
+          component: MonitorCreateView,
+        },
+        {
+        path: 'monitors/:monitorId/edit',
+        name: 'monitor-edit',
+        component: MonitorEditView,
+      },
       ],
     },
   ],

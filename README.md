@@ -52,17 +52,22 @@ The web UI is being developed as a Vue 3 single-page application inside the same
 
 Currently implemented:
 
-* Vue 3 + TypeScript + Vite application foundation
-* Vue Router navigation
-* Pinia application state management
-* Axios API client
-* Login and registration pages
-* JWT access token handling
-* Session restoration through rotating HttpOnly refresh tokens
-* Protected routes
-* Automatic access-token refresh and failed-request retry
-* Logout and refresh-session revocation
-* Basic authenticated application layout and navigation
+- Vue 3 + TypeScript + Vite application foundation
+- Vue Router navigation
+- Pinia application state management
+- Axios API client
+- Login and registration pages
+- JWT access token handling
+- Session restoration through rotating HttpOnly refresh tokens
+- Protected routes
+- Automatic access-token refresh and failed-request retry
+- Logout and refresh-session revocation
+- Organization selection and organization-scoped API requests
+- Role-aware UI permissions
+- Monitor list with status and configuration overview
+- Monitor creation for HTTP, TCP, DNS, TLS, and ICMP
+- Monitor editing
+- Monitor deletion
 
 The remaining monitoring and organization management screens are under development.
 
@@ -536,7 +541,6 @@ Vue 3 · TypeScript · Vite · Vue Router · Pinia · Axios · ESLint · Prettie
 
 * Organization selector and organization-scoped API integration
 * Dashboard
-* Monitor management
 * Monitor details, check history, and statistics
 * Incident management
 * Maintenance window management

@@ -15,6 +15,8 @@ def hash_api_key(
     api_key: str,
     hash_secret: str,
 ) -> str:
+    # API keys are high-entropy random tokens, not user passwords.
+    # A keyed deterministic digest allows lookup without storing plaintext keys.
     return hmac.digest(
         hash_secret.encode("utf-8"),
         api_key.encode("utf-8"),

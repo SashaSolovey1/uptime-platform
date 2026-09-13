@@ -7,12 +7,22 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from uptime_platform.core.config import get_settings
+from uptime_platform.db.models import (
+    register_models,
+)
 
 settings = get_settings()
 
-engine = create_async_engine(settings.database_url)
+register_models()
 
-SessionFactory = async_sessionmaker(bind=engine, expire_on_commit=False)
+engine = create_async_engine(
+    settings.database_url,
+)
+
+SessionFactory = async_sessionmaker(
+    bind=engine,
+    expire_on_commit=False,
+)
 
 
 async def get_db_session() -> AsyncIterator[AsyncSession]:
@@ -20,6 +30,7 @@ async def get_db_session() -> AsyncIterator[AsyncSession]:
         try:
             yield session
             await session.commit()
+
         except Exception:
             await session.rollback()
             raise

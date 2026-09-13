@@ -5,6 +5,7 @@ import App from './App.vue'
 import { setupApiInterceptors } from '@/api/interceptors'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
+import { useOrganizationStore } from '@/stores/organizations'
 
 import './assets/main.css'
 
@@ -15,8 +16,13 @@ const pinia = createPinia()
 app.use(pinia)
 
 const authStore = useAuthStore(pinia)
+const organizationStore = useOrganizationStore(pinia)
 
-setupApiInterceptors(authStore, router)
+setupApiInterceptors(
+  authStore,
+  organizationStore,
+  router,
+)
 
 app.use(router)
 

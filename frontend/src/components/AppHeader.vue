@@ -3,12 +3,21 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import { useOrganizationStore } from '@/stores/organizations'
 
 const router = useRouter()
+
 const authStore = useAuthStore()
+const organizationStore = useOrganizationStore()
 
 const isLoggingOut = ref(false)
 const logoutError = ref<string | null>(null)
+
+function handleOrganizationChange(event: Event): void {
+  const select = event.target as HTMLSelectElement
+
+  organizationStore.selectOrganization(select.value)
+}
 
 async function handleLogout(): Promise<void> {
   logoutError.value = null
@@ -16,6 +25,8 @@ async function handleLogout(): Promise<void> {
 
   try {
     await authStore.logout()
+
+    organizationStore.clear()
 
     await router.push('/login')
   } catch {
@@ -36,16 +47,45 @@ async function handleLogout(): Promise<void> {
         Uptime Platform
       </RouterLink>
 
-      <nav class="app-header__nav">
-        <RouterLink
-          class="app-header__link"
-          to="/dashboard"
-        >
-          Dashboard
-        </RouterLink>
-      </nav>
+    <nav class="app-header__nav">
+      <RouterLink
+        class="app-header__link"
+        to="/dashboard"
+      >
+        Dashboard
+      </RouterLink>
+
+      <RouterLink
+        class="app-header__link"
+        to="/monitors"
+      >
+        Monitors
+      </RouterLink>
+    </nav>
 
       <div class="app-header__user">
+        <select
+          v-if="organizationStore.organizations.length > 0"
+          class="app-header__organization"
+          :value="organizationStore.currentOrganizationId ?? ''"
+          @change="handleOrganizationChange"
+        >
+          <option
+            v-for="organization in organizationStore.organizations"
+            :key="organization.id"
+            :value="organization.id"
+          >
+            {{ organization.name }}
+          </option>
+        </select>
+
+        <span
+          v-if="organizationStore.currentOrganization"
+          class="app-header__role"
+        >
+          {{ organizationStore.currentOrganization.role }}
+        </span>
+
         <span
           v-if="authStore.user"
           class="app-header__email"
@@ -129,9 +169,33 @@ async function handleLogout(): Promise<void> {
 .app-header__user {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 
   margin-left: auto;
+}
+
+.app-header__organization {
+  min-width: 160px;
+  padding: 7px 10px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+
+  color: #334155;
+  background: #ffffff;
+
+  font-size: 14px;
+}
+
+.app-header__role {
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  color: #475569;
+  background: #f1f5f9;
+
+  font-size: 12px;
 }
 
 .app-header__email {
