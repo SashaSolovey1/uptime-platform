@@ -204,8 +204,12 @@ class NotificationWorker:
 
             event = await outbox_repository.get_by_id(delivery.event_id)
 
+            if event is None:
+                return None, None
+
             destination = await destination_repository.get_by_id(
-                delivery.destination_id
+                delivery.destination_id,
+                organization_id=event.organization_id,
             )
 
             return event, destination
