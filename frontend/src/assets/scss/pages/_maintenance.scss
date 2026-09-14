@@ -1,0 +1,74 @@
+@use '../variables' as *;
+
+.maintenance-page {
+  &__header {
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 8px;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+
+  &__empty {
+    padding: 48px 24px;
+
+    border: 1px dashed $color-control-border;
+    border-radius: $radius-medium;
+
+    text-align: center;
+
+    h2 {
+      margin: 0 0 8px;
+
+      color: $color-text;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+}
+
+.maintenance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.maintenance-filters {
+  display: flex;
+  gap: 16px;
+
+  margin: 24px 0;
+
+  .filter-field {
+    min-width: 240px;
+  }
+}
+
+@media (max-width: 600px) {
+  .maintenance-filters {
+    flex-direction: column;
+
+    .filter-field {
+      min-width: 0;
+    }
+  }
+}

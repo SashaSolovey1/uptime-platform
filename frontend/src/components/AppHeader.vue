@@ -48,6 +48,12 @@ async function handleLogout(): Promise<void> {
         <RouterLink class="app-header__link" to="/monitors"> Monitors </RouterLink>
 
         <RouterLink class="app-header__link" to="/incidents"> Incidents </RouterLink>
+
+        <RouterLink class="app-header__link" to="/maintenance"> Maintenance </RouterLink>
+
+        <RouterLink class="app-header__link" to="/notifications"> Notifications </RouterLink>
+
+        <RouterLink class="app-header__link" to="/status-pages"> Status Pages </RouterLink>
       </nav>
 
       <div class="app-header__user">

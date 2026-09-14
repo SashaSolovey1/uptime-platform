@@ -473,3 +473,53 @@ async def test_cannot_add_monitor_from_another_organization(
     assert response.json() == {
         "detail": "Status page or monitor not found",
     }
+
+    async def test_get_status_page_monitors(
+        client: httpx2.AsyncClient,
+        monitor_repository: InMemoryMonitorRepository,
+    ) -> None:
+        website = make_monitor(
+            name="Website",
+            status=MonitorStatus.UP,
+        )
+        api = make_monitor(
+            name="API",
+            status=MonitorStatus.DOWN,
+        )
+
+        await monitor_repository.create(website)
+        await monitor_repository.create(api)
+
+        create_response = await client.post(
+            "/api/v1/status-pages",
+            json={
+                "name": "Internal",
+                "slug": "internal",
+                "published": False,
+            },
+        )
+
+        page_id = create_response.json()["id"]
+
+        for monitor in (website, api):
+            response = await client.post(
+                f"/api/v1/status-pages/{page_id}/monitors/{monitor.id}"
+            )
+
+            assert response.status_code == 204
+
+        response = await client.get(f"/api/v1/status-pages/{page_id}/monitors")
+
+        assert response.status_code == 200
+        assert response.json() == [
+            {
+                "id": str(website.id),
+                "name": "Website",
+                "status": "up",
+            },
+            {
+                "id": str(api.id),
+                "name": "API",
+                "status": "down",
+            },
+        ]

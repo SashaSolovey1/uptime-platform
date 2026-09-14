@@ -18,6 +18,7 @@ from uptime_platform.status_pages.dependencies import (
 from uptime_platform.status_pages.schemas import (
     PublicStatusPageResponse,
     StatusPageCreate,
+    StatusPageMonitorResponse,
     StatusPageResponse,
     StatusPageUpdate,
 )
@@ -258,3 +259,25 @@ async def get_public_status_page(
         )
 
     return page
+
+
+@router.get(
+    "/api/v1/status-pages/{page_id}/monitors",
+    response_model=list[StatusPageMonitorResponse],
+)
+async def get_status_page_monitors(
+    page_id: UUID,
+    service: Annotated[
+        StatusPageService,
+        Depends(get_status_page_service),
+    ],
+) -> list[StatusPageMonitorResponse]:
+    monitors = await service.get_monitors(page_id)
+
+    if monitors is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Status page not found",
+        )
+
+    return monitors

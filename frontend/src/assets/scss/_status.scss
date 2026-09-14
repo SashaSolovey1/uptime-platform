@@ -58,3 +58,29 @@
     background: $color-danger-background;
   }
 }
+
+.maintenance-status {
+  display: inline-block;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  &--upcoming {
+    color: #1e40af;
+    background: #dbeafe;
+  }
+
+  &--active {
+    color: $color-warning;
+    background: $color-warning-background;
+  }
+
+  &--expired {
+    color: #475569;
+    background: #f1f5f9;
+  }
+}

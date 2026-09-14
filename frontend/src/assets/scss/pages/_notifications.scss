@@ -1,0 +1,85 @@
+@use '../variables' as *;
+
+.notifications-page {
+  &__header {
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 8px;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+
+  &__empty {
+    padding: 48px 24px;
+
+    border: 1px dashed $color-control-border;
+    border-radius: $radius-medium;
+
+    text-align: center;
+
+    h2 {
+      margin: 0 0 8px;
+
+      color: $color-text;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+
+      color: $color-muted;
+    }
+  }
+}
+
+.notification-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.notifications-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.destination-status {
+  display: inline-block;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  &--enabled {
+    color: $color-success;
+    background: $color-success-background;
+  }
+
+  &--disabled {
+    color: #475569;
+    background: #f1f5f9;
+  }
+}
+
+@media (max-width: 700px) {
+  .notifications-actions {
+    flex-direction: column;
+  }
+}

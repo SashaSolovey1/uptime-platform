@@ -11,6 +11,11 @@ import MonitorEditView from '@/views/MonitorEditView.vue'
 import MonitorDetailsView from '@/views/MonitorDetailsView.vue'
 import IncidentDetailsView from '@/views/IncidentDetailsView.vue'
 import IncidentsView from '@/views/IncidentsView.vue'
+import MaintenanceView from '@/views/MaintenanceView.vue'
+import NotificationsView from '@/views/NotificationsView.vue'
+import PublicStatusPageView from '@/views/PublicStatusPageView.vue'
+import StatusPageDetailsView from '@/views/StatusPageDetailsView.vue'
+import StatusPagesView from '@/views/StatusPagesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +30,11 @@ const router = createRouter({
       path: '/register',
       name: 'register',
       component: RegisterView,
+    },
+    {
+      path: '/status/:slug',
+      name: 'public-status-page',
+      component: PublicStatusPageView,
     },
     {
       path: '/',
@@ -71,6 +81,26 @@ const router = createRouter({
           path: 'incidents/:incidentId',
           name: 'incident-details',
           component: IncidentDetailsView,
+        },
+        {
+          path: 'maintenance',
+          name: 'maintenance',
+          component: MaintenanceView,
+        },
+        {
+          path: 'notifications',
+          name: 'notifications',
+          component: NotificationsView,
+        },
+        {
+          path: 'status-pages',
+          name: 'status-pages',
+          component: StatusPagesView,
+        },
+        {
+          path: 'status-pages/:pageId',
+          name: 'status-page-details',
+          component: StatusPageDetailsView,
         },
       ],
     },

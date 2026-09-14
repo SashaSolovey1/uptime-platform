@@ -176,6 +176,41 @@ class StatusPageService:
             monitor_id,
         )
 
+    async def get_monitors(
+        self,
+        page_id: UUID,
+    ) -> list[StatusPageMonitorResponse] | None:
+        page = await self._repository.get_by_id(
+            page_id,
+            self._organization_id,
+        )
+
+        if page is None:
+            return None
+
+        relations = await self._repository.get_monitors(page_id)
+
+        monitors: list[StatusPageMonitorResponse] = []
+
+        for relation in relations:
+            monitor = await self._monitor_repository.get_by_id(
+                relation.monitor_id,
+                self._organization_id,
+            )
+
+            if monitor is None:
+                continue
+
+            monitors.append(
+                StatusPageMonitorResponse(
+                    id=monitor.id,
+                    name=monitor.name,
+                    status=monitor.status,
+                )
+            )
+
+        return monitors
+
 
 class PublicStatusPageService:
     def __init__(
