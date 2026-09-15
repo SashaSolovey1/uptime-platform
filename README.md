@@ -539,15 +539,6 @@ Vue 3 · TypeScript · Vite · Vue Router · Pinia · Axios · ESLint · Prettie
 
 ### Web UI
 
-* Organization selector and organization-scoped API integration
-* Dashboard
-* Incident management
-* Maintenance window management
-* Notification destination management
-* Status page management
-* Organization member and role management
-* API key management
-* Loading, error, and empty states
 * Responsive UI
 * Production frontend build and Docker deployment
 
