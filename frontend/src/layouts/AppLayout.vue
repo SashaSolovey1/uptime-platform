@@ -37,23 +37,6 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-.app-layout {
-  min-height: 100vh;
-}
-
-.app-layout__content {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 32px 24px;
-}
-
-.app-layout__error {
-  color: #dc2626;
-}
-
-.app-layout__empty {
-  color: #64748b;
-}
+<style lang="scss">
+@use '@/assets/scss/components/app-layout';
 </style>

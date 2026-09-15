@@ -1,0 +1,184 @@
+@use '../variables' as *;
+
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+
+    h1 {
+      margin: 0 0 8px;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+      color: $color-muted;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding: 20px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-large;
+
+  background: $color-surface;
+
+  text-decoration: none;
+
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+
+  &:hover {
+    border-color: $color-primary;
+    transform: translateY(-1px);
+  }
+
+  &__label {
+    color: $color-muted;
+    font-size: 14px;
+  }
+
+  &__value {
+    color: $color-heading;
+    font-size: 32px;
+    line-height: 1;
+
+    &--success {
+      color: $color-success;
+    }
+
+    &--danger {
+      color: $color-danger;
+    }
+  }
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 2fr)
+    minmax(240px, 1fr);
+  gap: 24px;
+}
+
+.dashboard-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 0;
+
+  border-bottom: 1px solid $color-border;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  strong {
+    color: $color-heading;
+  }
+}
+
+.dashboard-api-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 0;
+
+  color: $color-text;
+
+  &--success {
+    color: $color-success;
+  }
+
+  &--danger {
+    color: $color-danger;
+  }
+}
+
+.dashboard-healthy {
+  margin: 0;
+
+  padding: 16px;
+
+  border-radius: $radius-medium;
+
+  color: $color-success;
+  background: $color-success-background;
+}
+
+@media (max-width: 900px) {
+  .dashboard-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-page__header {
+    flex-direction: column;
+  }
+
+  .dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-page {
+    gap: 16px;
+
+    &__actions {
+      flex-wrap: wrap;
+
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-page__actions .button-secondary {
+    width: 100%;
+  }
+
+  .dashboard-summary-card {
+    padding: 16px;
+  }
+}

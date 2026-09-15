@@ -1,0 +1,39 @@
+@use '../variables' as *;
+
+.app-layout {
+  min-height: 100vh;
+
+  &__content {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  &__error {
+    color: $color-danger;
+  }
+
+  &__empty {
+    color: $color-muted;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-layout__content {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-layout__content {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-layout__content {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+}

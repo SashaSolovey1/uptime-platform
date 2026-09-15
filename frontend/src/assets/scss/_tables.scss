@@ -4,7 +4,10 @@
 .incidents-table-wrapper,
 .check-history__table-wrapper,
 .table-wrapper {
+  width: 100%;
   overflow-x: auto;
+
+  -webkit-overflow-scrolling: touch;
 }
 
 .monitors-table-wrapper,
@@ -21,6 +24,7 @@
 .check-history__table,
 .data-table {
   width: 100%;
+  min-width: 680px;
 
   border-collapse: collapse;
 
@@ -64,5 +68,17 @@
   th,
   td {
     padding: 12px 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .monitors-table,
+  .incidents-table,
+  .check-history__table,
+  .data-table {
+    th,
+    td {
+      padding: 12px;
+    }
   }
 }

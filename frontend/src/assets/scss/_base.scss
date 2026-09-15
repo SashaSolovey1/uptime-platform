@@ -12,6 +12,10 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -23,7 +27,7 @@ body {
     'Segoe UI',
     sans-serif;
 
-  color: #1f2937;
+  color: $color-text;
   background: $color-background;
 }
 
@@ -32,4 +36,9 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
 }

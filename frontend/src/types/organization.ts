@@ -6,3 +6,6 @@ export interface Organization {
   role: OrganizationRole
   created_at: string
 }
+export interface OrganizationCreate {
+  name: string
+}

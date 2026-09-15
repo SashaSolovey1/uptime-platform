@@ -187,3 +187,7 @@ watch(
     </div>
   </section>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/incidents';
+</style>

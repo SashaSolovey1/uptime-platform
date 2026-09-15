@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 import apiClient from '@/api/client'
-import type { Organization } from '@/types/organization'
+import type { Organization, OrganizationCreate } from '@/types/organization'
 
 const ORGANIZATION_STORAGE_KEY = 'uptime-platform.organization-id'
 
@@ -79,6 +79,15 @@ export const useOrganizationStore = defineStore('organizations', {
       this.initialized = false
 
       localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
+    },
+    async createOrganization(data: OrganizationCreate): Promise<Organization> {
+      const response = await apiClient.post<Organization>('/api/v1/organizations', data)
+
+      this.organizations.push(response.data)
+
+      this.selectOrganization(response.data.id)
+
+      return response.data
     },
   },
 })

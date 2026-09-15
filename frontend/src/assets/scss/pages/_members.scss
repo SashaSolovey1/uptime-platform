@@ -1,6 +1,6 @@
 @use '../variables' as *;
 
-.maintenance-page {
+.members-page {
   &__header {
     margin-bottom: 24px;
 
@@ -13,9 +13,12 @@
 
     p {
       margin: 0;
-
       color: $color-muted;
     }
+  }
+
+  &__message {
+    margin: 24px 0;
   }
 
   &__empty {
@@ -35,13 +38,12 @@
 
     p {
       margin: 0;
-
       color: $color-muted;
     }
   }
 }
 
-.maintenance-form {
+.member-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -52,39 +54,50 @@
   }
 }
 
-.maintenance-filters {
-  display: flex;
-  gap: 16px;
+.member-role-select {
+  min-width: 120px;
 
-  margin: 24px 0;
+  padding: 8px 10px;
 
-  .filter-field {
-    min-width: 240px;
+  border: 1px solid $color-control-border;
+  border-radius: $radius-small;
 
-    select {
-      padding: 8px 10px;
-
-      border: 1px solid $color-control-border;
-      border-radius: $radius-small;
-
-      color: $color-text;
-      background: $color-surface;
-    }
-  }
+  background: $color-surface;
 }
 
-@media (max-width: 600px) {
-  .maintenance-filters {
-    flex-direction: column;
+.member-role {
+  display: inline-block;
 
-    .filter-field {
-      min-width: 0;
-    }
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  &--owner {
+    color: #6b21a8;
+    background: #f3e8ff;
+  }
+
+  &--admin {
+    color: #1e40af;
+    background: #dbeafe;
+  }
+
+  &--member {
+    color: $color-success;
+    background: $color-success-background;
+  }
+
+  &--viewer {
+    color: #475569;
+    background: #f1f5f9;
   }
 }
 
 @media (max-width: 640px) {
-  .maintenance-form__actions {
+  .member-form__actions {
     align-items: stretch;
     flex-direction: column;
 
@@ -92,5 +105,10 @@
     .button-secondary {
       width: 100%;
     }
+  }
+
+  .member-role-select {
+    width: 100%;
+    min-width: 0;
   }
 }

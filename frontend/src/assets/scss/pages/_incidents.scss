@@ -161,3 +161,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .incident-details__title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .incident-filters {
+    padding: 16px;
+  }
+}

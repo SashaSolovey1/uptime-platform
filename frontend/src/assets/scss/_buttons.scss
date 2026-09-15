@@ -55,3 +55,11 @@
     background: #fef2f2;
   }
 }
+
+@media (max-width: 640px) {
+  .button-primary,
+  .button-secondary,
+  .button-danger {
+    min-height: 44px;
+  }
+}

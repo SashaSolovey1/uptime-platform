@@ -306,3 +306,54 @@
     flex-direction: column;
   }
 }
+
+@media (max-width: 640px) {
+  .monitor-details {
+    &__title {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    &__target {
+      overflow-wrap: anywhere;
+    }
+
+    &__actions {
+      align-items: stretch;
+      flex-direction: column;
+
+      .button-primary,
+      .button-secondary,
+      .button-danger {
+        width: 100%;
+      }
+    }
+  }
+
+  .statistics__periods {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .details-card,
+  .check-result,
+  .check-history,
+  .statistics {
+    padding: 16px;
+  }
+
+  .details-card,
+  .check-result {
+    dl > div {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    dd {
+      text-align: left;
+    }
+  }
+}

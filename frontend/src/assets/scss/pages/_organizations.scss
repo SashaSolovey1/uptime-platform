@@ -1,0 +1,125 @@
+@use '../variables' as *;
+
+.organizations-page {
+  &__header {
+    margin-bottom: 24px;
+
+    h1 {
+      margin: 0 0 8px;
+
+      color: $color-heading;
+      font-size: 28px;
+    }
+
+    p {
+      margin: 0;
+      color: $color-muted;
+    }
+  }
+}
+
+.organization-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.organization-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.organization-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  padding: 18px;
+
+  border: 1px solid $color-border;
+  border-radius: $radius-medium;
+
+  background: $color-surface;
+
+  &--current {
+    border-color: $color-primary;
+  }
+
+  &__info {
+    min-width: 0;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    color: $color-heading;
+  }
+
+  &__current {
+    padding: 3px 8px;
+
+    border-radius: 999px;
+
+    color: $color-primary;
+    background: #dbeafe;
+
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 16px;
+
+    margin-top: 8px;
+
+    color: $color-muted;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .organization-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .organization-card__meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  .organization-form__actions {
+    align-items: stretch;
+    flex-direction: column;
+
+    .button-primary,
+    .button-secondary {
+      width: 100%;
+    }
+  }
+
+  .organization-card {
+    &__title {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .button-primary,
+    .button-secondary,
+    .button-danger {
+      width: 100%;
+    }
+  }
+}

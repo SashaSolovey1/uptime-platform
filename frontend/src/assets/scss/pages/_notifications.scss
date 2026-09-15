@@ -83,3 +83,23 @@
     flex-direction: column;
   }
 }
+
+@media (max-width: 640px) {
+  .notification-form__actions {
+    align-items: stretch;
+    flex-direction: column;
+
+    .button-primary,
+    .button-secondary {
+      width: 100%;
+    }
+  }
+
+  .notifications-actions {
+    .button-primary,
+    .button-secondary,
+    .button-danger {
+      width: 100%;
+    }
+  }
+}

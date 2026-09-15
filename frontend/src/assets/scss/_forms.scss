@@ -99,3 +99,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .form-section {
+    padding: 16px;
+  }
+
+  .form-field {
+    input,
+    select,
+    textarea {
+      min-height: 44px;
+      font-size: 16px;
+    }
+  }
+}

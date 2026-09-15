@@ -109,3 +109,23 @@
     }
   }
 }
+
+@media (max-width: 640px) {
+  .monitor-create,
+  .monitor-edit {
+    max-width: 100%;
+  }
+
+  .monitor-form {
+    &__actions,
+    &__actions-right {
+      width: 100%;
+    }
+
+    .button-primary,
+    .button-secondary,
+    .button-danger {
+      width: 100%;
+    }
+  }
+}

@@ -2,20 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import AppLayout from '@/layouts/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth'
-import DashboardView from '@/views/DashboardView.vue'
-import LoginView from '@/views/LoginView.vue'
-import MonitorsView from '@/views/MonitorsView.vue'
-import RegisterView from '@/views/RegisterView.vue'
-import MonitorCreateView from '@/views/MonitorCreateView.vue'
-import MonitorEditView from '@/views/MonitorEditView.vue'
-import MonitorDetailsView from '@/views/MonitorDetailsView.vue'
-import IncidentDetailsView from '@/views/IncidentDetailsView.vue'
-import IncidentsView from '@/views/IncidentsView.vue'
-import MaintenanceView from '@/views/MaintenanceView.vue'
-import NotificationsView from '@/views/NotificationsView.vue'
-import PublicStatusPageView from '@/views/PublicStatusPageView.vue'
-import StatusPageDetailsView from '@/views/StatusPageDetailsView.vue'
-import StatusPagesView from '@/views/StatusPagesView.vue'
+import { useOrganizationStore } from '@/stores/organizations'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,18 +11,15 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: () => import('@/views/LoginView.vue'),
     },
+
     {
       path: '/register',
       name: 'register',
-      component: RegisterView,
+      component: () => import('@/views/RegisterView.vue'),
     },
-    {
-      path: '/status/:slug',
-      name: 'public-status-page',
-      component: PublicStatusPageView,
-    },
+
     {
       path: '/',
       component: AppLayout,
@@ -47,62 +31,97 @@ const router = createRouter({
           path: '',
           redirect: '/dashboard',
         },
+
         {
           path: 'dashboard',
           name: 'dashboard',
-          component: DashboardView,
+          component: () => import('@/views/DashboardView.vue'),
         },
+
         {
           path: 'monitors',
           name: 'monitors',
-          component: MonitorsView,
+          component: () => import('@/views/MonitorsView.vue'),
         },
+
         {
           path: 'monitors/new',
           name: 'monitor-create',
-          component: MonitorCreateView,
+          component: () => import('@/views/MonitorCreateView.vue'),
         },
+
         {
           path: 'monitors/:monitorId/edit',
           name: 'monitor-edit',
-          component: MonitorEditView,
+          component: () => import('@/views/MonitorEditView.vue'),
         },
+
         {
           path: 'monitors/:monitorId',
           name: 'monitor-details',
-          component: MonitorDetailsView,
+          component: () => import('@/views/MonitorDetailsView.vue'),
         },
+
         {
           path: 'incidents',
           name: 'incidents',
-          component: IncidentsView,
+          component: () => import('@/views/IncidentsView.vue'),
         },
+
         {
           path: 'incidents/:incidentId',
           name: 'incident-details',
-          component: IncidentDetailsView,
+          component: () => import('@/views/IncidentDetailsView.vue'),
         },
+
         {
           path: 'maintenance',
           name: 'maintenance',
-          component: MaintenanceView,
+          component: () => import('@/views/MaintenanceView.vue'),
         },
+
         {
           path: 'notifications',
           name: 'notifications',
-          component: NotificationsView,
+          component: () => import('@/views/NotificationsView.vue'),
         },
+
         {
           path: 'status-pages',
           name: 'status-pages',
-          component: StatusPagesView,
+          component: () => import('@/views/StatusPagesView.vue'),
         },
+
         {
           path: 'status-pages/:pageId',
           name: 'status-page-details',
-          component: StatusPageDetailsView,
+          component: () => import('@/views/StatusPageDetailsView.vue'),
+        },
+
+        {
+          path: 'members',
+          name: 'members',
+          component: () => import('@/views/MembersView.vue'),
+        },
+
+        {
+          path: 'organizations',
+          name: 'organizations',
+          component: () => import('@/views/OrganizationsView.vue'),
+        },
+
+        {
+          path: 'api-keys',
+          name: 'api-keys',
+          component: () => import('@/views/ApiKeysView.vue'),
         },
       ],
+    },
+
+    {
+      path: '/status/:slug',
+      name: 'public-status-page',
+      component: () => import('@/views/PublicStatusPageView.vue'),
     },
   ],
 })

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 import { useOrganizationStore } from '@/stores/organizations'
 
+const route = useRoute()
 const router = useRouter()
 
 const authStore = useAuthStore()
@@ -13,10 +14,40 @@ const organizationStore = useOrganizationStore()
 const isLoggingOut = ref(false)
 const logoutError = ref<string | null>(null)
 
+const canManageApiKeys = computed(() => {
+  const role = organizationStore.currentOrganization?.role
+
+  return role === 'owner' || role === 'admin'
+})
+
+const isOperationsActive = computed(() => {
+  return (
+    route.path.startsWith('/maintenance') ||
+    route.path.startsWith('/notifications') ||
+    route.path.startsWith('/status-pages')
+  )
+})
+
+const isSettingsActive = computed(() => {
+  return (
+    route.path.startsWith('/members') ||
+    route.path.startsWith('/organizations') ||
+    route.path.startsWith('/api-keys')
+  )
+})
+
 function handleOrganizationChange(event: Event): void {
   const select = event.target as HTMLSelectElement
 
   organizationStore.selectOrganization(select.value)
+}
+
+function closeDropdown(event: Event): void {
+  const element = event.currentTarget as HTMLElement
+
+  const details = element.closest('details')
+
+  details?.removeAttribute('open')
 }
 
 async function handleLogout(): Promise<void> {
@@ -49,11 +80,68 @@ async function handleLogout(): Promise<void> {
 
         <RouterLink class="app-header__link" to="/incidents"> Incidents </RouterLink>
 
-        <RouterLink class="app-header__link" to="/maintenance"> Maintenance </RouterLink>
+        <details class="app-header__dropdown">
+          <summary
+            class="app-header__dropdown-toggle"
+            :class="{
+              'app-header__dropdown-toggle--active': isOperationsActive,
+            }"
+          >
+            Operations
+          </summary>
 
-        <RouterLink class="app-header__link" to="/notifications"> Notifications </RouterLink>
+          <div class="app-header__dropdown-menu">
+            <RouterLink class="app-header__dropdown-link" to="/maintenance" @click="closeDropdown">
+              Maintenance
+            </RouterLink>
 
-        <RouterLink class="app-header__link" to="/status-pages"> Status Pages </RouterLink>
+            <RouterLink
+              class="app-header__dropdown-link"
+              to="/notifications"
+              @click="closeDropdown"
+            >
+              Notifications
+            </RouterLink>
+
+            <RouterLink class="app-header__dropdown-link" to="/status-pages" @click="closeDropdown">
+              Status Pages
+            </RouterLink>
+          </div>
+        </details>
+
+        <details class="app-header__dropdown">
+          <summary
+            class="app-header__dropdown-toggle"
+            :class="{
+              'app-header__dropdown-toggle--active': isSettingsActive,
+            }"
+          >
+            Settings
+          </summary>
+
+          <div class="app-header__dropdown-menu">
+            <RouterLink class="app-header__dropdown-link" to="/members" @click="closeDropdown">
+              Members
+            </RouterLink>
+
+            <RouterLink
+              class="app-header__dropdown-link"
+              to="/organizations"
+              @click="closeDropdown"
+            >
+              Organizations
+            </RouterLink>
+
+            <RouterLink
+              v-if="canManageApiKeys"
+              class="app-header__dropdown-link"
+              to="/api-keys"
+              @click="closeDropdown"
+            >
+              API Keys
+            </RouterLink>
+          </div>
+        </details>
       </nav>
 
       <div class="app-header__user">
@@ -97,126 +185,6 @@ async function handleLogout(): Promise<void> {
   </header>
 </template>
 
-<style scoped>
-.app-header {
-  border-bottom: 1px solid #e2e8f0;
-  background: #ffffff;
-}
-
-.app-header__content {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-
-  width: 100%;
-  max-width: 1280px;
-  height: 64px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.app-header__logo {
-  color: #0f172a;
-  font-size: 18px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.app-header__nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.app-header__link {
-  padding: 8px 12px;
-
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-
-  border-radius: 6px;
-}
-
-.app-header__link:hover {
-  color: #0f172a;
-  background: #f1f5f9;
-}
-
-.app-header__link.router-link-active {
-  color: #2563eb;
-  background: #eff6ff;
-}
-
-.app-header__user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  margin-left: auto;
-}
-
-.app-header__organization {
-  min-width: 160px;
-  padding: 7px 10px;
-
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-
-  color: #334155;
-  background: #ffffff;
-
-  font-size: 14px;
-}
-
-.app-header__role {
-  padding: 4px 8px;
-
-  border-radius: 999px;
-
-  color: #475569;
-  background: #f1f5f9;
-
-  font-size: 12px;
-}
-
-.app-header__email {
-  color: #64748b;
-  font-size: 14px;
-}
-
-.app-header__logout {
-  padding: 8px 12px;
-
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-
-  color: #334155;
-  background: #ffffff;
-
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.app-header__logout:hover:not(:disabled) {
-  background: #f8fafc;
-}
-
-.app-header__logout:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.app-header__error {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 24px 8px;
-
-  color: #dc2626;
-  font-size: 13px;
-  text-align: right;
-}
+<style lang="scss">
+@use '@/assets/scss/components/app-header';
 </style>

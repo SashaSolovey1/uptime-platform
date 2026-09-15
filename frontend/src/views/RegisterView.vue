@@ -126,3 +126,7 @@ async function submitRegistration(): Promise<void> {
     </div>
   </main>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/auth';
+</style>

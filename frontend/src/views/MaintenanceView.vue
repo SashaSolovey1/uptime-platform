@@ -10,6 +10,8 @@ import type {
   MaintenanceWindowStatus,
 } from '@/types/maintenance'
 
+import { getMaintenanceWindowStatus } from '@/utils/maintenance'
+
 const maintenanceStore = useMaintenanceStore()
 const monitorStore = useMonitorStore()
 const organizationStore = useOrganizationStore()
@@ -52,22 +54,6 @@ function getMonitorName(monitorId: string): string {
   })
 
   return monitor?.name ?? monitorId
-}
-
-function getWindowStatus(window: MaintenanceWindow): MaintenanceWindowStatus {
-  const now = Date.now()
-  const startsAt = new Date(window.starts_at).getTime()
-  const endsAt = new Date(window.ends_at).getTime()
-
-  if (now < startsAt) {
-    return 'upcoming'
-  }
-
-  if (now >= startsAt && now < endsAt) {
-    return 'active'
-  }
-
-  return 'expired'
 }
 
 function getStatusLabel(status: MaintenanceWindowStatus): string {
@@ -287,9 +273,9 @@ watch(
             <td>
               <span
                 class="maintenance-status"
-                :class="`maintenance-status--${getWindowStatus(maintenanceWindow)}`"
+                :class="`maintenance-status--${getMaintenanceWindowStatus(maintenanceWindow)}`"
               >
-                {{ getStatusLabel(getWindowStatus(maintenanceWindow)) }}
+                {{ getStatusLabel(getMaintenanceWindowStatus(maintenanceWindow)) }}
               </span>
             </td>
 
@@ -327,3 +313,7 @@ watch(
     </div>
   </section>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/maintenance';
+</style>

@@ -485,3 +485,7 @@ async function submitMonitor(): Promise<void> {
     </form>
   </section>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/monitor-form';
+</style>

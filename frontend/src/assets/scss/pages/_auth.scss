@@ -68,3 +68,29 @@
     }
   }
 }
+
+@media (max-width: 640px) {
+  .login-page,
+  .register-page {
+    align-items: flex-start;
+
+    padding: 24px 16px;
+  }
+
+  .login-card,
+  .register-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-page,
+  .register-page {
+    padding: 16px 12px;
+  }
+
+  .login-card,
+  .register-card {
+    padding: 20px 16px;
+  }
+}

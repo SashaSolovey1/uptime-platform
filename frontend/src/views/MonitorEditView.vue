@@ -569,3 +569,7 @@ onMounted(async () => {
     </form>
   </section>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/monitor-form';
+</style>

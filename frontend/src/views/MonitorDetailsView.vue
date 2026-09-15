@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import axios from 'axios'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+import { useMaintenanceStore } from '@/stores/maintenance'
+import type { MaintenanceWindow } from '@/types/maintenance'
+import { getMaintenanceWindowStatus } from '@/utils/maintenance'
 
 import { useMonitorStore } from '@/stores/monitors'
 import { useOrganizationStore } from '@/stores/organizations'
@@ -22,10 +26,18 @@ const router = useRouter()
 const monitorStore = useMonitorStore()
 const incidentStore = useIncidentStore()
 const organizationStore = useOrganizationStore()
+const maintenanceStore = useMaintenanceStore()
 
 const monitorIncidents = ref<Incident[]>([])
 const incidentsLoading = ref(false)
 const incidentsError = ref<string | null>(null)
+const maintenanceWindows = ref<MaintenanceWindow[]>([])
+const maintenanceLoading = ref(false)
+const maintenanceError = ref<string | null>(null)
+
+const now = ref(Date.now())
+
+let clockIntervalId: number | null = null
 
 const monitor = ref<Monitor | null>(null)
 const lastManualCheck = ref<Check | null>(null)
@@ -53,6 +65,19 @@ const canManageMonitor = computed(() => {
   return role === 'owner' || role === 'admin' || role === 'member'
 })
 
+const relevantMaintenanceWindows = computed(() => {
+  return maintenanceWindows.value
+    .filter((maintenanceWindow) => {
+      const status = getMaintenanceWindowStatus(maintenanceWindow, now.value)
+
+      return status !== 'expired'
+    })
+    .sort((first, second) => {
+      return new Date(first.starts_at).getTime() - new Date(second.starts_at).getTime()
+    })
+    .slice(0, 3)
+})
+
 function getMonitorId(): string | null {
   const monitorId = route.params.monitorId
 
@@ -61,6 +86,28 @@ function getMonitorId(): string | null {
   }
 
   return monitorId
+}
+
+async function loadMonitorMaintenance(): Promise<void> {
+  const monitorId = getMonitorId()
+
+  if (!monitorId) {
+    return
+  }
+
+  maintenanceLoading.value = true
+  maintenanceError.value = null
+
+  try {
+    maintenanceWindows.value = await maintenanceStore.getMaintenanceWindows({
+      monitor_id: monitorId,
+    })
+  } catch {
+    maintenanceWindows.value = []
+    maintenanceError.value = 'Unable to load maintenance windows'
+  } finally {
+    maintenanceLoading.value = false
+  }
 }
 
 function getMonitorTarget(monitor: Monitor): string {
@@ -213,10 +260,25 @@ async function loadMonitorIncidents(): Promise<void> {
 }
 
 onMounted(async () => {
+  clockIntervalId = window.setInterval(() => {
+    now.value = Date.now()
+  }, 60_000)
+
   await loadMonitor()
 
   if (monitor.value) {
-    await Promise.all([loadChecks(), loadStatistics(), loadMonitorIncidents()])
+    await Promise.all([
+      loadChecks(),
+      loadStatistics(),
+      loadMonitorIncidents(),
+      loadMonitorMaintenance(),
+    ])
+  }
+})
+
+onUnmounted(() => {
+  if (clockIntervalId !== null) {
+    window.clearInterval(clockIntervalId)
   }
 })
 
@@ -588,6 +650,78 @@ watch(statisticsPeriod, async () => {
         </div>
       </div>
 
+      <div class="section-card monitor-maintenance">
+        <div class="section-header">
+          <div>
+            <h2>Maintenance</h2>
+
+            <p>Active and upcoming maintenance windows.</p>
+          </div>
+
+          <RouterLink class="text-link" to="/maintenance"> View maintenance </RouterLink>
+        </div>
+
+        <p v-if="maintenanceLoading && maintenanceWindows.length === 0" class="text-muted">
+          Loading maintenance...
+        </p>
+
+        <div v-else-if="maintenanceError" class="message-error">
+          {{ maintenanceError }}
+        </div>
+
+        <p v-else-if="relevantMaintenanceWindows.length === 0" class="text-muted">
+          No active or upcoming maintenance.
+        </p>
+
+        <div v-else class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Starts</th>
+                <th>Ends</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                v-for="maintenanceWindow in relevantMaintenanceWindows"
+                :key="maintenanceWindow.id"
+              >
+                <td>
+                  <span
+                    class="maintenance-status"
+                    :class="`maintenance-status--${getMaintenanceWindowStatus(
+                      maintenanceWindow,
+                      now,
+                    )}`"
+                  >
+                    {{
+                      getMaintenanceWindowStatus(maintenanceWindow, now) === 'active'
+                        ? 'Active'
+                        : 'Upcoming'
+                    }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ new Date(maintenanceWindow.starts_at).toLocaleString() }}
+                </td>
+
+                <td>
+                  {{ new Date(maintenanceWindow.ends_at).toLocaleString() }}
+                </td>
+
+                <td>
+                  {{ maintenanceWindow.reason ?? '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="section-card monitor-incidents">
         <div class="section-header">
           <div>
@@ -721,3 +855,7 @@ watch(statisticsPeriod, async () => {
     </template>
   </section>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/monitor-details';
+</style>

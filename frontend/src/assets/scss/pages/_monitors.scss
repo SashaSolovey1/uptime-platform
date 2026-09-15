@@ -125,3 +125,19 @@
     background: $color-primary-hover;
   }
 }
+
+@media (max-width: 640px) {
+  .monitors-page__header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .create-monitor-button {
+    display: flex;
+    justify-content: center;
+
+    width: 100%;
+    min-height: 44px;
+  }
+}

@@ -1,6 +1,6 @@
 @use '../variables' as *;
 
-.maintenance-page {
+.api-keys-page {
   &__header {
     margin-bottom: 24px;
 
@@ -13,9 +13,12 @@
 
     p {
       margin: 0;
-
       color: $color-muted;
     }
+  }
+
+  &__message {
+    margin: 24px 0;
   }
 
   &__empty {
@@ -35,13 +38,12 @@
 
     p {
       margin: 0;
-
       color: $color-muted;
     }
   }
 }
 
-.maintenance-form {
+.api-key-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -52,39 +54,70 @@
   }
 }
 
-.maintenance-filters {
-  display: flex;
-  gap: 16px;
-
+.api-key-secret {
   margin: 24px 0;
+  padding: 20px;
 
-  .filter-field {
-    min-width: 240px;
+  border: 1px solid $color-warning;
+  border-radius: $radius-medium;
 
-    select {
-      padding: 8px 10px;
+  background: $color-warning-background;
 
-      border: 1px solid $color-control-border;
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+
+    h2 {
+      margin: 0 0 6px;
+
+      color: $color-heading;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+      color: $color-text;
+    }
+  }
+
+  &__value {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-top: 16px;
+
+    code {
+      flex: 1;
+
+      overflow-x: auto;
+
+      padding: 12px;
+
+      border: 1px solid $color-border;
       border-radius: $radius-small;
 
-      color: $color-text;
       background: $color-surface;
+
+      white-space: nowrap;
     }
   }
 }
 
 @media (max-width: 600px) {
-  .maintenance-filters {
-    flex-direction: column;
-
-    .filter-field {
-      min-width: 0;
+  .api-key-secret {
+    &__header,
+    &__value {
+      align-items: stretch;
+      flex-direction: column;
     }
   }
 }
 
 @media (max-width: 640px) {
-  .maintenance-form__actions {
+  .api-key-form__actions {
     align-items: stretch;
     flex-direction: column;
 
@@ -92,5 +125,9 @@
     .button-secondary {
       width: 100%;
     }
+  }
+
+  .api-key-secret {
+    padding: 16px;
   }
 }

@@ -65,3 +65,21 @@
     font-size: 14px;
   }
 }
+
+@media (max-width: 640px) {
+  .summary-card,
+  .section-card {
+    padding: 16px;
+  }
+
+  .section-card {
+    margin-top: 16px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 12px;
+
+    margin-bottom: 16px;
+  }
+}

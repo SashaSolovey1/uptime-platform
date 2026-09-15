@@ -94,3 +94,7 @@ async function submitLogin(): Promise<void> {
     </div>
   </main>
 </template>
+
+<style lang="scss">
+@use '@/assets/scss/pages/auth';
+</style>

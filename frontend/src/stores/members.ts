@@ -1,0 +1,86 @@
+import { defineStore } from 'pinia'
+
+import apiClient from '@/api/client'
+import type {
+  OrganizationMember,
+  OrganizationMemberCreate,
+  OrganizationMemberUpdate,
+} from '@/types/member'
+
+interface MembersState {
+  members: OrganizationMember[]
+  loading: boolean
+  error: string | null
+}
+
+export const useMembersStore = defineStore('members', {
+  state: (): MembersState => ({
+    members: [],
+    loading: false,
+    error: null,
+  }),
+
+  actions: {
+    async loadMembers(): Promise<void> {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await apiClient.get<OrganizationMember[]>('/api/v1/organization-members')
+
+        this.members = response.data
+      } catch (error) {
+        this.members = []
+        this.error = 'Unable to load organization members'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async addMember(data: OrganizationMemberCreate): Promise<OrganizationMember> {
+      const response = await apiClient.post<OrganizationMember>(
+        '/api/v1/organization-members',
+        data,
+      )
+
+      this.members.push(response.data)
+
+      return response.data
+    },
+
+    async updateMember(
+      userId: string,
+      data: OrganizationMemberUpdate,
+    ): Promise<OrganizationMember> {
+      const response = await apiClient.patch<OrganizationMember>(
+        `/api/v1/organization-members/${userId}`,
+        data,
+      )
+
+      const index = this.members.findIndex((member) => {
+        return member.user_id === userId
+      })
+
+      if (index !== -1) {
+        this.members[index] = response.data
+      }
+
+      return response.data
+    },
+
+    async removeMember(userId: string): Promise<void> {
+      await apiClient.delete(`/api/v1/organization-members/${userId}`)
+
+      this.members = this.members.filter((member) => {
+        return member.user_id !== userId
+      })
+    },
+
+    clear(): void {
+      this.members = []
+      this.loading = false
+      this.error = null
+    },
+  },
+})
