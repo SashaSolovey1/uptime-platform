@@ -106,7 +106,7 @@ The backend and frontend are maintained in the same repository but use separate 
 Clone the repository:
 
 ```bash
-git clone https://github.com/SashaSolovey1/uptime-platform.git
+git clone https://github.com/nightingale-develop/uptime-platform.git
 cd uptime-platform
 ```
 
